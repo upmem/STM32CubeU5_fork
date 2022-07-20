@@ -1,4 +1,4 @@
-#!/bin/bash - 
+#!/bin/bash 
 
 builddir=`pwd`
 # Full path is required for tool used
@@ -56,8 +56,8 @@ cp -u ../tfm_isolation_l2.ld.template Templates
 # Generate files from manifest
 export projectdir=$templatedir
 
-$TOOLS/dist/tfm_parse_manifest_list/tfm_parse_manifest_list.exe -o $templatedir/../AutoGen -m $templatedir/tfm_manifest_list.yaml -f $templatedir/tfm_generated_file_list.yaml
-#python $TOOLS/dist/pyscript/tfm_parse_manifest_list.py -o $templatedir/../AutoGen -m $templatedir/tfm_manifest_list.yaml -f $templatedir/tfm_generated_file_list.yaml
+#$TOOLS/dist/tfm_parse_manifest_list/tfm_parse_manifest_list.exe -o $templatedir/../AutoGen -m $templatedir/tfm_manifest_list.yaml -f $templatedir/tfm_generated_file_list.yaml
+python3 $TOOLS/dist/pyscript/tfm_parse_manifest_list.py -o $templatedir/../AutoGen -m $templatedir/tfm_manifest_list.yaml -f $templatedir/tfm_generated_file_list.yaml
 
 # Preprocess linker file
 arm-none-eabi-gcc -E -P -xc -DBL2 -D$2 -DTFM_PSA_API  -I../../../../Linker -o./output.ld  ./tfm_common_s.ld

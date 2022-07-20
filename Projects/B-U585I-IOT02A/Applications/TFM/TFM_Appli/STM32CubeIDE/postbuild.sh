@@ -91,7 +91,7 @@ else
 #line for python
 echo Postbuild with python script
 imgtool=$mcuboot_dir"/scripts/imgtool/main.py"
-python="python "
+python="python3 "
 fi
 
 #sign mode

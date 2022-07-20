@@ -127,12 +127,12 @@
 									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/mcuboot/boot/bootutil/include"/>
 									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/mcuboot/boot/bootutil/src"/>
 									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/trustedfirmware/bl2/ext/mcuboot/include"/>
-									<listOptionValue builtIn="false" value="../../../../TFM_SBSFU_BOOT/Inc"/>
 									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/trustedfirmware"/>
 									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/ST/SE_STSAFEA_API/Core/Inc"/>
 									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/ST/SE_STSAFEA_API/Application/MbedTLS/Inc"/>
 									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/ST/STSAFE_A1xx/CoreModules/Inc"/>
 									<listOptionValue builtIn="false" value="../../../../../../../../Middlewares/Third_Party/trustedfirmware/platform/ext/secure_element/stm"/>
+									<listOptionValue builtIn="false" value="../../../../TFM_SBSFU_Boot/Inc"/>
 								</option>
 								<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.warnings.all.868380262" name="Enable all warnings about questionable constructions (-Wall)" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.warnings.all" useByScannerDiscovery="false" value="false" valueType="boolean"/>
 								<inputType id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c.871675445" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c"/>

@@ -31,7 +31,7 @@ else
 #line for python
 echo Postbuild with python script
 imgtool=$basedir"/scripts/imgtool/main.py"
-cmd="python"
+cmd="python3"
 fi
 
 if [ $operation == "secure" ]; then

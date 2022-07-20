@@ -81,17 +81,17 @@ if [ ! -e "$userAppBinary" ]; then
   mkdir "$userAppBinary"
 fi
 
-if [ "_$6" == "_" ]; then
-  #line for window executable
-  echo dataimg with windows executable
-  imgtool=$mcuboot_dir/scripts/dist/imgtool/imgtool.exe
-  python=
-else
+#if [ "_$6" == "_" ]; then
+#  #line for window executable
+#  echo dataimg with windows executable
+#  imgtool=$mcuboot_dir/scripts/dist/imgtool/imgtool.exe
+#  python=
+#else
   # line for python
   echo dataimg with python script
   imgtool=$mcuboot_dir/scripts/imgtool/main.py
-  "python=python "
-fi
+  python="python3 "
+#fi
 
 #sign mode
 if [ "$crypto_scheme" == "0" ]; then
