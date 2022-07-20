@@ -1,12 +1,12 @@
-set sec1_end=
-set sec2_start=
-set sec2_end=
-set wrp_start=
-set wrp_end=
-set hdp_end=
-set wrp_bank2_start=
-set wrp_bank2_end=
-set nsbootadd=
+set sec1_end=42
+set sec2_start=127
+set sec2_end=0
+set wrp_start=2
+set wrp_end=12
+set hdp_end=11
+set wrp_bank2_start=125
+set wrp_bank2_end=127
+set nsbootadd=0x1800c0
 echo "hardening script started"
 set stm32programmercli="C:\Program Files\STMicroelectronics\STM32Cube\STM32CubeProgrammer\bin\STM32_Programmer_CLI.exe"
 set bank2_secure="-ob SECWM2_PSTRT=%sec2_start% SECWM2_PEND=%sec2_end%"

@@ -52,12 +52,12 @@ set "tfm_ns_enc_sign=%userAppBinary%\tfm_ns_data_enc_sign%ver%.bin"
 
 ::field updated by TFM_SBSFU_Boot postbuild
 
-set image_ns_size=
-set image_s_size=
-set primary_only=
-set crypto_scheme=
-set encrypted=
-set over_write=
+set image_ns_size=0x2000
+set image_s_size=0x2000
+set primary_only=0
+set crypto_scheme=0
+set encrypted=1
+set over_write=1
 :: end of updated field
 pushd %projectdir%\..\..\TFM_SBSFU_Boot\Src
 set tfm_key_dir=%cd%

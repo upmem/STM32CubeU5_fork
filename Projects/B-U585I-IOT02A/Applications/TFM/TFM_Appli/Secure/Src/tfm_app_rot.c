@@ -16,6 +16,7 @@
 #include "psa_manifest/tfm_app_rot.h"
 #endif
 #include "tfm_app_rot_api.h"
+#include "tfm_log.h"
 extern void Error_Handler(void);
 #define INPUT_BUFFER_SIZE  64
 #define OUTPUT_BUFFER_SIZE 64
@@ -121,6 +122,7 @@ enum tfm_app_rot_err_t app_rot_init(void)
 {
     psa_signal_t signals = 0;
     while (1) {
+        LOG_MSG("In App rot init ...\r\n");
         signals = psa_wait(PSA_WAIT_ANY, PSA_BLOCK);
         if (signals &  TFM_APP_ROT_IOCTL_SIGNAL) {
             app_rot_signal_handle(TFM_APP_ROT_IOCTL_SIGNAL ,

@@ -241,7 +241,7 @@ static void StSafeA_SHA_Generation(const uint32_t *input,
 }
 #endif /* USE_COMPUTED_HOST_KEYS */
 
-StSafeA_ResponseCode_t StSafeA_Crypto_GetKeys(uint8_t *serial, uint32_t size)
+StSafeA_ResponseCode_t StSafeA_Crypto_GetKeys(uint8_t *serial, size_t size)
 {
 #if (USE_COMPUTED_HOST_KEYS)
   uint32_t encryptedkey[8];   /* Application Key       */

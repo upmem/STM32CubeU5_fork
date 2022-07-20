@@ -40,20 +40,20 @@
 #define TFM_ICACHE_ENABLE /*!< Instruction cache enable */
 
 /* Static protections */
-#define TFM_WRP_PROTECT_ENABLE  /*!< Write Protection  */
-#define TFM_HDP_PROTECT_ENABLE /*!< HDP protection   */
+//#define TFM_WRP_PROTECT_ENABLE  /*!< Write Protection  */
+//#define TFM_HDP_PROTECT_ENABLE /*!< HDP protection   */
 #define TFM_SECURE_USER_SRAM2_ERASE_AT_RESET /*!< SRAM2 clear at Reset  */
 
 #ifdef TFM_DEV_MODE
-#define TFM_OB_RDP_LEVEL_VALUE OB_RDP_LEVEL_1 /*!< RDP level */
+#define TFM_OB_RDP_LEVEL_VALUE OB_RDP_LEVEL_0 /*!< RDP level */
 #else
-#define TFM_OB_RDP_LEVEL_VALUE OB_RDP_LEVEL_2 /*!< RDP level */
+#define TFM_OB_RDP_LEVEL_VALUE OB_RDP_LEVEL_0 /*!< RDP level */
 #endif /* TFM_DEV_MODE */
 
 #define NO_TAMPER            (0)                /*!< No tamper activated */
 #define INTERNAL_TAMPER_ONLY (1)                /*!< Only Internal tamper activated */
 #define ALL_TAMPER           (2)                /*!< Internal and External tamper activated */
-#define TFM_TAMPER_ENABLE ALL_TAMPER            /*!< TAMPER configuration flag  */
+#define TFM_TAMPER_ENABLE NO_TAMPER            /*!< TAMPER configuration flag  */
 
 #ifdef TFM_DEV_MODE
 #define TFM_OB_BOOT_LOCK 0 /*!< BOOT Lock expected value  */

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workspace>
+    <project>
+        <path>$WS_DIR$\TFM_SBSFU_Boot\EWARM\Project.ewp</path>
+    </project>
+    <project>
+        <path>$WS_DIR$\TFM_Appli\EWARM\Project_ns.ewp</path>
+    </project>
+    <project>
+        <path>$WS_DIR$\TFM_Loader\EWARM\Project_ns.ewp</path>
+    </project>
+    <project>
+        <path>$WS_DIR$\TFM_Appli\EWARM\Project_s.ewp</path>
+    </project>
+    <project>
+        <path>$WS_DIR$\TFM_Loader\EWARM\Project_s.ewp</path>
+    </project>
+    <batchBuild>
+        <batchDefinition>
+            <name>TF-M Batch</name>
+            <member>
+                <project>Project</project>
+                <configuration>B-U585I-IOT02A_TFM_SBSFU_Boot</configuration>
+            </member>
+            <member>
+                <project>Project_s</project>
+                <configuration>B-U585I-IOT02A_TFM_Appli_S</configuration>
+            </member>
+            <member>
+                <project>Project_ns</project>
+                <configuration>B-U585I-IOT02A_TFM_Appli_NS</configuration>
+            </member>
+            <member>
+                <project>Project_s</project>
+                <configuration>B-U585I-IOT02A_TFM_Loader_S</configuration>
+            </member>
+            <member>
+                <project>Project_ns</project>
+                <configuration>B-U585I-IOT02A_TFM_Loader_NS</configuration>
+            </member>
+        </batchDefinition>
+    </batchBuild>
+</workspace>

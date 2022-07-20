@@ -9,6 +9,7 @@
 #include "cmsis.h"
 #include "flash_layout.h"
 #include "platform_ioctl.h"
+#include "tfm_spm_log.h"
 #if !defined(MCUBOOT_OVERWRITE_ONLY) && ((MCUBOOT_APP_IMAGE_NUMBER == 2) || (MCUBOOT_S_DATA_IMAGE_NUMBER == 1))
 #include "Driver_Flash.h"
 extern ARM_DRIVER_FLASH FLASH_PRIMARY_SECURE_DEV_NAME;
@@ -25,10 +26,12 @@ static enum tfm_platform_err_t tfm_platform_read(psa_invec *in_vec, psa_outvec *
 static enum tfm_platform_err_t tfm_platform_write(psa_invec *in_vec, psa_outvec *out_vec);
 static enum tfm_platform_err_t tfm_platform_write_exec(psa_invec *in_vec, psa_outvec *out_vec);
 #endif
+//#define TFM_DEV_MODE
 #ifdef TFM_DEV_MODE
 static __IO int once=0;
 void Error_Handler(void)
 {
+  SPMLOG_ERRMSG("Error_Handler ...\r\n");
 	/* Reset the system */
     while(once==0);
 }

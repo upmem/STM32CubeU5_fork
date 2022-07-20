@@ -183,7 +183,10 @@ define block TFM_UNPRIV_DATA with alignment = 32 {
        rw object tfm_spm_services.o,
        rw object device_definition.o,
        rw object stm32u5xx_hal*.o,
-       rw object tick.o
+       rw object tick.o,
+       rw object tfm_log_raw.o,
+       rw object low_level_com.o,
+       rw object uart_stdout.o
        };
 #if defined (TFM_PARTITION_APP_ROT)
 define block TFM_APP_ROT_DATA with alignment = 32 {

@@ -31,6 +31,7 @@
 #define FLASH0_PAGE_SIZE 0x2000
 #define FLASH0_PROG_UNIT 0x10
 #define FLASH0_ERASED_VAL 0xff
+
 /*
 #define DEBUG_FLASH_ACCESS
 #define CHECK_ERASE

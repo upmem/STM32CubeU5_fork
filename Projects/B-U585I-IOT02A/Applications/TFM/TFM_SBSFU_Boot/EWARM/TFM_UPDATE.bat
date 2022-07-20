@@ -2,20 +2,20 @@ echo "TFM_UPDATE started"
 set stm32programmercli="C:\Program Files\STMicroelectronics\STM32Cube\STM32CubeProgrammer\bin\STM32_Programmer_CLI.exe"
 set connect_no_reset=-c port=SWD mode=UR
 set connect=-c port=SWD mode=UR --hardRst
-set slot0=
-set slot1=
-set slot2=
-set slot3=
-set slot4=
-set slot5=
-set slot6=
-set slot7=
-set boot=
-set loader=
-set cfg_loader=
-set app_image_number=
-set s_data_image_number=
-set ns_data_image_number=
+set slot0=0xc028000
+set slot1=0xc056000
+set slot2=0xc0f8000
+set slot3=0xc126000
+set slot4=0xc026000
+set slot5=0xc0f6000
+set slot6=0xc1c6000
+set slot7=0xc1c8000
+set boot=0xc004000
+set loader=0xc1fa000
+set cfg_loader=1
+set app_image_number=2
+set s_data_image_number=1
+set ns_data_image_number=1
 if  "%app_image_number%" == "2" (
 echo "Write TFM_Appli Secure"
 %stm32programmercli% %connect% -d %~dp0..\..\TFM_Appli\binary\tfm_s_app_init.bin %slot0% -v

@@ -9,8 +9,8 @@ set "loader_s=%projectdir%\B-U585I-IOT02A_S\Exe\Project.bin"
 set "loader_ns=%projectdir%\B-U585I-IOT02A_NS\Exe\Project.bin"
 set "binarydir=%projectdir%\..\Binary"
 set "loader=%binarydir%\loader.bin"
-set loader_ns_size=
-set loader_s_size=
+set loader_ns_size=0x6000
+set loader_s_size=0x4000
 pushd %projectdir%\..\..\..\..\..\..\Middlewares\Third_Party\mcuboot
 set mcuboot_dir=%cd%
 popd

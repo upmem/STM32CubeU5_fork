@@ -50,6 +50,12 @@
         "short_name": "pid.h",
         "template": "${projectdir}/pid.h.template",
         "output": "interface/include/psa_manifest/pid.h"
+    },
+    {
+        "name": "linker file",
+        "short_name": "tfm_common_s.ld",
+        "template": "${projectdir}/tfm_isolation_l2.ld.template",
+        "output": "../tfm_common_s.ld"
     }
   ]
 }

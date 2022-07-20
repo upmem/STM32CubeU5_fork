@@ -17,6 +17,7 @@
 #include "tfm_spm_log.h"
 #include "tfm_version.h"
 #include "uart_stdout.h"
+#include "tfm_spm_log.h"
 
 /*
  * Avoids the semihosting issue
@@ -47,6 +48,7 @@ static fih_int tfm_core_init(void)
     /* init uart to be able to print trace in early SPM init */
     stdio_init();
 
+    SPMLOG_INFMSG("initializing\r\n");
     /* Enables fault handlers */
     plat_err = tfm_spm_hal_enable_fault_handlers();
     if (plat_err != TFM_PLAT_ERR_SUCCESS) {

@@ -1,0 +1,18 @@
+C_SRCS += \
+$(wildcard AutoGen/auto_generated/*.c) 
+
+USER_OBJS  += \
+$(patsubst %.c,%.o,$(wildcard AutoGen/auto_generated/*.c))
+
+C_DEPS += \
+$(patsubst %.c,%.d,$(wildcard AutoGen/auto_generated/*.c))
+
+AutoGen/auto_generated/%.o: AutoGen/auto_generated/%.c ../makefile.defs
+	arm-none-eabi-gcc "$<" -mcpu=cortex-m33 -std=gnu11 -g3 -c -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"$(@:%.o=%.d)" -MT"$@" --specs=nano.specs -mfloat-abi=soft -mthumb -o "$@"
+
+clean: clean-generated_code
+
+clean-generated_code:
+	-$(RM) AutoGen/auto_generated
+
+.PHONY: clean-generated_code
