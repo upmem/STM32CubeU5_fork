@@ -27,8 +27,6 @@
 #ifndef FREERTOS_CONFIG_H
 #define FREERTOS_CONFIG_H
 
-#include "logging.h"
-
 /*-----------------------------------------------------------
 * Application specific definitions.
 *
@@ -63,13 +61,13 @@ extern uint32_t SystemCoreClock;
 #define configUSE_PREEMPTION                       1
 #define configSUPPORT_STATIC_ALLOCATION            1
 #define configSUPPORT_DYNAMIC_ALLOCATION           1
-#define configUSE_IDLE_HOOK                        1
+#define configUSE_IDLE_HOOK                        0
 #define configUSE_TICK_HOOK                        0
 #define configCPU_CLOCK_HZ                         ( SystemCoreClock )
 #define configTICK_RATE_HZ                         ( ( TickType_t ) 1000 )
 #define configMAX_PRIORITIES                       ( 56 )
 #define configMINIMAL_STACK_SIZE                   ( ( uint16_t ) 1024 )
-#define configTOTAL_HEAP_SIZE                      ( ( size_t ) 300 * 1024 )
+#define configTOTAL_HEAP_SIZE                      ( ( size_t ) 10 * 1024 )
 #define configMAX_TASK_NAME_LEN                    ( 32 )
 #define configUSE_TRACE_FACILITY                   1
 #define configUSE_16_BIT_TICKS                     0
@@ -88,7 +86,7 @@ extern uint32_t SystemCoreClock;
 #define configGENERATE_RUN_TIME_STATS              1
 
 /* For lwip errno support */
-#define configUSE_NEWLIB_REENTRANT                 1
+#define configUSE_NEWLIB_REENTRANT                 0
 
 /* Co-routine definitions. */
 #define configUSE_CO_ROUTINES                      0
@@ -165,12 +163,11 @@ extern uint32_t SystemCoreClock;
  * See http://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html. */
 #define configMAX_SYSCALL_INTERRUPT_PRIORITY            ( configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY << ( 8 - configPRIO_BITS ) )
 
+#include "stdio.h"
 #define configASSERT( x )                     \
     do {                                      \
         if( ( x ) == 0 ) {                    \
-            vDyingGasp();                     \
-            LogAssert( "Assertion failed." ); \
-            vDyingGasp();                     \
+            printf("configASSERT\n");		  \
             while( 1 ) {                      \
                 __NOP();                      \
             }                                 \
@@ -178,22 +175,16 @@ extern uint32_t SystemCoreClock;
     } while( 0 )
 
 
-#define configASSERT_CONTINUE( x )                      \
-    do {                                                \
-        if( ( x ) == 0 ) {                              \
-            LogAssert( "Non-fatal assertion failed." ); \
-        }                                               \
-    } while( 0 )
-
 #include "stack_macros.h"
 
 #define configAPPLICATION_PROVIDES_cOutputBuffer    1
 #define configCOMMAND_INT_MAX_OUTPUT_SIZE           128
 
-#include "hw_defs.h"
 #define portCONFIGURE_TIMER_FOR_RUN_TIME_STATS()
-#define portGET_RUN_TIME_COUNTER_VALUE()    ( timer_get_count( pxHndlTim5 ) )
+#define portGET_RUN_TIME_COUNTER_VALUE()    ( 0 )
 
-
+//#define vPortSVCHandler SVC_Handler
+//#define xPortPendSVHandler PendSV_Handler
+//#define xPortSysTickHandler SysTick_Handler
 
 #endif /* FREERTOS_CONFIG_H */
