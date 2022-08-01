@@ -31,6 +31,11 @@
 	</natures>
 	<linkedResources>
 		<link>
+			<name>Middlewares/FreeRTOS</name>
+			<type>2</type>
+			<locationURI>PARENT-7-PROJECT_LOC/Middlewares/Third_Party/FreeRTOS</locationURI>
+		</link>
+		<link>
 			<name>Application/User/com.c</name>
 			<type>1</type>
 			<locationURI>PARENT-2-PROJECT_LOC/NonSecure/Src/com.c</locationURI>
