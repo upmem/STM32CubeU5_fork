@@ -35,8 +35,12 @@ __asm("  .global __ARM_use_no_argv\n");
 #include "tfm_app.h"
 #include "ns_data.h"
 
+/* FreeRTOS includes */
 #include "FreeRTOS.h"
 #include "task.h"
+/* Temporary includes */
+#include "crypto_tests_common.h"
+
 /** @defgroup  USER_APP  exported variable
    * @{
   */
@@ -62,8 +66,6 @@ volatile uint32_t TestNumber  __attribute__((section(".bss.NoInit"))) ;
 #define USER_APP_NBLINKS  ((uint8_t) 1U)
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-uint8_t *pUserAppId;
-const uint8_t UserAppId = 'A';
 
 /* Private function prototypes -----------------------------------------------*/
 static void SystemClock_Config(void);
@@ -73,6 +75,8 @@ static void uart_putc(unsigned char c)
 {
   COM_Transmit(&c, 1, 1000U);
 }
+static void my_first_task (void *pvParameters);
+static void my_second_task (void *pvParameters);
 
 /* Redirects printf to TFM_DRIVER_STDIO in case of ARMCLANG*/
 #if defined(__ARMCC_VERSION)
@@ -113,21 +117,30 @@ int putchar(int ch)
 }
 #endif /*  __GNUC__ */
 
-void my_first_task (void *pvParameters);
-#include "crypto_tests_common.h"
-
 void my_first_task (void *pvParameters) {
-    for (;;) {
-        printf("my_first_task\r\n");
-        struct test_result_t ret;
-        ret.val = TEST_FAILED;
-        psa_aead_test(PSA_KEY_TYPE_AES, PSA_ALG_GCM, &ret);
-        printf("AES GCM test %s\r\n", (ret.val == TEST_PASSED) ? "SUCCESSFUL" : "FAILED");
-        HAL_Delay(500);
-    }
+  for (;;) {
+    struct test_result_t ret;
+    ret.val = TEST_FAILED;
+    psa_aead_test(PSA_KEY_TYPE_AES, PSA_ALG_GCM, &ret);
+    printf("%s", (ret.val == TEST_PASSED) ? "1" : "x");
+    HAL_Delay(500);
+  }
 }
 
-
+void my_second_task (void *pvParameters) {
+  static int cnt;
+  struct test_result_t ret;
+  for (;;) {
+    ret.val = TEST_FAILED;
+    psa_hash_test(PSA_ALG_SHA_256, &ret);
+    printf("%s", (ret.val == TEST_PASSED) ? "2" : "x");
+      cnt ++;
+      if(cnt / 32) {
+        printf("\r\n");
+	cnt = 0;
+      }
+    }
+}
 
 /**
   * @brief  Main program
@@ -137,8 +150,6 @@ void my_first_task (void *pvParameters) {
 int main(int argc, char **argv)
 /*int main(void) */
 {
-  /*  set example to const : this const changes in binary without rebuild */
-  pUserAppId = (uint8_t *)&UserAppId;
 
   /* STM32U5xx HAL library initialization:
   - Systick timer is configured by default as source of time base, but user
@@ -160,12 +171,11 @@ int main(int argc, char **argv)
   /* Configure Communication module */
   COM_Init();
 
+
+  tfm_ns_interface_init();
+
   /* PendSV_IRQn interrupt configuration */
   HAL_NVIC_SetPriority( PendSV_IRQn, 7, 0 );
-  /* task*/
-  xTaskCreate(my_first_task, "my first task", configMINIMAL_STACK_SIZE, NULL, 1, NULL);
-  /* Start scheduler */
-  vTaskStartScheduler();
 
   /* test if an automatic test protection is launched */
   if (((TestNumber & TEST_PROTECTION_MASK)==TEST_PROTECTION_MASK) ||
@@ -173,15 +183,16 @@ int main(int argc, char **argv)
   {
     TEST_PROTECTIONS_Run_SecUserMem();
   }
-  printf("\r\n======================================================================");
-  printf("\r\n=              (C) COPYRIGHT 2021 STMicroelectronics                 =");
-  printf("\r\n=                                                                    =");
-  printf("\r\n=                          User App #%c                               =", *pUserAppId);
-  printf("\r\n======================================================================");
-  printf("\r\n\r\n");
+  // Create mutex before starting tasks
+  //mutex = xSemaphoreCreateMutex();
+  printf("App version 1.1\r\n");
 
-  /* User App firmware runs*/
-  FW_APP_Run();
+  /* task*/
+  xTaskCreate(my_first_task, "my first task", configMINIMAL_STACK_SIZE, NULL, 2, NULL);
+  xTaskCreate(my_second_task, "my second task", configMINIMAL_STACK_SIZE, NULL, 1, NULL);
+
+  /* Start scheduler */
+  vTaskStartScheduler();
 
   while (1U)
   {}
