@@ -20,6 +20,7 @@
 #include "ffm/spm_error_base.h"
 #include "tfm_rpc.h"
 #include "tfm_spm_hal.h"
+#include "tfm_log.h"
 
 /*********************** SPM functions for PSA Client APIs *******************/
 
@@ -69,6 +70,8 @@ psa_status_t tfm_spm_psa_call(uint32_t *args, bool ns_caller, uint32_t lr)
     uint32_t privileged;
     int32_t type;
     struct tfm_control_parameter_t ctrl_param;
+
+    LOG_MSG_VERBOSE("tfm_spm_psa_call\r\n");
 
     TFM_CORE_ASSERT(args != NULL);
     handle = (psa_handle_t)args[0];

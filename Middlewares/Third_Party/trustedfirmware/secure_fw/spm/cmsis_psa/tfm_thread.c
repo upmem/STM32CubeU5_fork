@@ -11,6 +11,7 @@
 #include "tfm_memory_utils.h"
 #include "tfm/tfm_core_svc.h"
 #include "tfm_core_utils.h"
+#include "tfm_log.h"
 
 /* Force ZERO in case ZI(bss) clear is missing */
 static struct tfm_core_thread_t *p_thrd_head = NULL; /* Head of all threads */
@@ -119,6 +120,7 @@ void tfm_core_thrd_set_state(struct tfm_core_thread_t *pth, uint32_t new_state)
 /* Scheduling won't happen immediately but after the exception returns */
 void tfm_core_thrd_activate_schedule(void)
 {
+    LOG_MSG_VERBOSE("tfm_arch_trigger_pendsv\r\n");
     tfm_arch_trigger_pendsv();
 }
 

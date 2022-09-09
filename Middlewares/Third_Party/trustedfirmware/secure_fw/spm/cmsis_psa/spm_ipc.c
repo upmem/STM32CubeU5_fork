@@ -36,6 +36,7 @@
 
 #include "secure_fw/partitions/tfm_service_list.inc"
 #include "tfm_spm_db_ipc.inc"
+#include "tfm_log.h"
 
 /* Pools */
 TFM_POOL_DECLARE(conn_handle_pool, sizeof(struct tfm_conn_handle_t),
@@ -796,6 +797,7 @@ void tfm_pendsv_do_schedule(struct tfm_arch_ctx_t *p_actx)
     fih_int fih_rc = FIH_FAILURE;
 #endif
 
+    LOG_MSG_VERBOSE("tfm_pendsv_do_schedule\r\n");
     if (pth_next != NULL && pth_curr != pth_next) {
 #if TFM_LVL != 1
         p_next_partition = TFM_GET_CONTAINER_PTR(pth_next,
@@ -844,6 +846,7 @@ void tfm_pendsv_do_schedule(struct tfm_arch_ctx_t *p_actx)
      * Empty operation on single Armv8-M platform.
      */
     tfm_rpc_client_call_handler();
+    LOG_MSG_VERBOSE("tfm_pendsv_do_schedule done\r\n");
 }
 
 void update_caller_outvec_len(struct tfm_msg_body_t *msg)

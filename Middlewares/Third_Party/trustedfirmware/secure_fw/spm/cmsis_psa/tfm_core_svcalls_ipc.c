@@ -17,6 +17,7 @@
 #include "ffm/tfm_boot_data.h"
 #include "ffm/psa_client_service_apis.h"
 #include "tfm_hal_spm_logdev.h"
+#include "tfm_log.h"
 
 /* The section names come from the scatter file */
 REGION_DECLARE(Image$$, TFM_UNPRIV_CODE, $$RO$$Base);
@@ -122,7 +123,6 @@ static int32_t SVC_Handler_IPC(tfm_svc_number_t svc_num, uint32_t *ctx,
     return PSA_SUCCESS;
 }
 
-
 uint32_t tfm_core_svc_handler(uint32_t *msp, uint32_t *psp, uint32_t exc_return)
 {
     tfm_svc_number_t svc_number = TFM_SVC_PSA_FRAMEWORK_VERSION;
@@ -157,6 +157,7 @@ uint32_t tfm_core_svc_handler(uint32_t *msp, uint32_t *psp, uint32_t exc_return)
          */
         tfm_core_panic();
     }
+    LOG_MSG_VERBOSE("tfm_core_svc_handler %d\r\n", svc_number);
     switch (svc_number) {
     case TFM_SVC_HANDLER_MODE:
         tfm_arch_clear_fp_status();
@@ -173,6 +174,7 @@ uint32_t tfm_core_svc_handler(uint32_t *msp, uint32_t *psp, uint32_t exc_return)
         svc_args[0] = SVC_Handler_IPC(svc_number, svc_args, exc_return);
         break;
     }
+    LOG_MSG_VERBOSE("tfm_core_svc_handler done\r\n");
 
     return exc_return;
 }

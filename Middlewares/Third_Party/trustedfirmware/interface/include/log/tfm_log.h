@@ -14,4 +14,9 @@
 
 #define LOG_MSG(...) tfm_log_printf(__VA_ARGS__)
 
+#ifdef VERBOSE
+#define LOG_MSG_VERBOSE LOG_MSG
+#else
+#define LOG_MSG_VERBOSE(...)
+#endif
 #endif /* __TFM_LOG_H__ */
