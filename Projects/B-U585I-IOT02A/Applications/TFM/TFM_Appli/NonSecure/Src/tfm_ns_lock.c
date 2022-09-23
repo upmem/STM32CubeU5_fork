@@ -27,7 +27,7 @@ int32_t tfm_ns_interface_dispatch(veneer_fn fn,
                                   uint32_t arg2, uint32_t arg3)
 {
   vprintf("tfm_ns_interface_dispatch\r\n");
-  uint32_t ret;
+  uint32_t ret = PSA_ERROR_GENERIC_ERROR;
 
   if (xSemaphoreTake(tfm_mutex, portMAX_DELAY) == pdTRUE) {
 	  ret = (uint32_t)fn(arg0, arg1, arg2, arg3);

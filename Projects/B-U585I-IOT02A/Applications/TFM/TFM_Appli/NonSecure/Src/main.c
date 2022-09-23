@@ -38,9 +38,16 @@ __asm("  .global __ARM_use_no_argv\n");
 /* FreeRTOS includes */
 #include "FreeRTOS.h"
 #include "task.h"
+
+#include "dma.h"
+#include "spi.h"
+#include "error.h"
+
+#include "pilot_config.h"
+
+#include "tfm_ns_interface.h"
 /* Temporary includes */
 #include "crypto_tests_common.h"
-
 /** @defgroup  USER_APP  exported variable
    * @{
   */
@@ -62,21 +69,19 @@ volatile uint32_t TestNumber  __attribute__((section(".bss.NoInit"))) ;
 /* Private define ------------------------------------------------------------*/
 
 
-
 #define USER_APP_NBLINKS  ((uint8_t) 1U)
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 
 /* Private function prototypes -----------------------------------------------*/
 static void SystemClock_Config(void);
-void FW_APP_PrintMainMenu(void);
-void FW_APP_Run(void);
 static void uart_putc(unsigned char c)
 {
   COM_Transmit(&c, 1, 1000U);
 }
 static void my_first_task (void *pvParameters);
 static void my_second_task (void *pvParameters);
+static void RTOS_Init(void);
 
 /* Redirects printf to TFM_DRIVER_STDIO in case of ARMCLANG*/
 #if defined(__ARMCC_VERSION)
@@ -150,7 +155,7 @@ void my_second_task (void *pvParameters) {
 int main(int argc, char **argv)
 /*int main(void) */
 {
-
+  char version[] = "0.1";
   /* STM32U5xx HAL library initialization:
   - Systick timer is configured by default as source of time base, but user
   can eventually implement his proper time base source (a general purpose
@@ -165,17 +170,22 @@ int main(int argc, char **argv)
   /* DeInitialize RCC to allow PLL reconfiguration when configuring system clock */
   HAL_RCC_DeInit();
 
+  /* ICACHE is enabled in SBSFU */
+
   /* Configure the system clock */
   SystemClock_Config();
-
   /* Configure Communication module */
   COM_Init();
 
+  printf("\r\nApp version %s\r\n", version);
+
+  /* Configure DMAs */
+  //DMA_Init();
+
+  /* Configure SPI interfaces */
+  SPI_Init();
 
   tfm_ns_interface_init();
-
-  /* PendSV_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority( PendSV_IRQn, 7, 0 );
 
   /* test if an automatic test protection is launched */
   if (((TestNumber & TEST_PROTECTION_MASK)==TEST_PROTECTION_MASK) ||
@@ -183,21 +193,32 @@ int main(int argc, char **argv)
   {
     TEST_PROTECTIONS_Run_SecUserMem();
   }
+
+  SPI_test();
+  /* TODO uncomment it */
+#ifdef  PILOT_RTOS_SUPPORT
+  RTOS_Init();
+#endif
+  while (1U)
+  {}
+
+}
+
+static void RTOS_Init(void) {
+  /* PendSV_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority( PendSV_IRQn, PILOT_PENDSV_IRQ_PRIORITY, 0 );
+
   // Create mutex before starting tasks
   //mutex = xSemaphoreCreateMutex();
-  printf("App version 1.1\r\n");
 
-  /* task*/
+  /* tasks */
   xTaskCreate(my_first_task, "my first task", configMINIMAL_STACK_SIZE, NULL, 2, NULL);
   xTaskCreate(my_second_task, "my second task", configMINIMAL_STACK_SIZE, NULL, 1, NULL);
 
   /* Start scheduler */
   vTaskStartScheduler();
-
-  while (1U)
-  {}
-
 }
+
 
 /**
   * @brief  System Clock Configuration
@@ -220,6 +241,7 @@ int main(int argc, char **argv)
   * @param  None
   * @retval None
   */
+
 void SystemClock_Config(void)
 {
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
@@ -227,10 +249,15 @@ void SystemClock_Config(void)
 
   /* Enable voltage range 1 for frequency above 100 Mhz */
   __HAL_RCC_PWR_CLK_ENABLE();
-  HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE1);
-
+  if (HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE1)!= HAL_OK)
+  {
+    Error_Handler();
+  }
   /* Switch to SMPS regulator instead of LDO */
-  HAL_PWREx_ConfigSupply(PWR_SMPS_SUPPLY);
+  if (HAL_PWREx_ConfigSupply(PWR_SMPS_SUPPLY)!= HAL_OK)
+  {
+    Error_Handler();
+  }
 
   __HAL_RCC_PWR_CLK_DISABLE();
 
@@ -269,73 +296,6 @@ void SystemClock_Config(void)
   }
 }
 
-/**
-  * @brief  Display the TEST Main Menu choices on HyperTerminal
-  * @param  None.
-  * @retval None.
-  */
-void FW_APP_PrintMainMenu(void)
-{
-  printf("\r\n=================== Main Menu ============================\r\n\n");
-  printf("  Test Protections -------------------------------------- 1\r\n\n");
-  printf("  Test TFM ---------------------------------------------- 2\r\n\n");
-#if   !defined(MCUBOOT_PRIMARY_ONLY)
-  printf("  New Fw Image ------------------------------------------ 3\r\n\n");
-#endif
-#if (MCUBOOT_NS_DATA_IMAGE_NUMBER == 1)
-  printf("  Non-Secure Data --------------------------------------- 4\r\n\n");
-#endif /* defined(MCUBOOT_NS_DATA_IMAGE_NUMBER) */
-  printf("  Selection :\r\n\n");
-}
-
-/**
-  * @brief  Display the TEST Main Menu choices on HyperTerminal
-  * @param  None.
-  * @retval None.
-  */
-void FW_APP_Run(void)
-{
-  uint8_t key = 0U;
-
-  /*##1- Print Main Menu message*/
-  FW_APP_PrintMainMenu();
-
-  while (1U)
-  {
-    /* Clean the input path */
-    COM_Flush();
-
-    /* Receive key */
-    if (COM_Receive(&key, 1U, RX_TIMEOUT) == HAL_OK)
-    {
-      switch (key)
-      {
-        case '1' :
-          TEST_PROTECTIONS_Run();
-          break;
-        case '2' :
-          tfm_app_menu();
-          break;
-#if   !defined(MCUBOOT_PRIMARY_ONLY)
-        case '3' :
-          FW_UPDATE_Run();
-          break;
-#endif
-#if (MCUBOOT_NS_DATA_IMAGE_NUMBER == 1)
-        case '4' :
-          NS_DATA_Run();
-          break;
-#endif /* defined(MCUBOOT_NS_DATA_IMAGE_NUMBER) */
-        default:
-          printf("Invalid Number !\r");
-          break;
-      }
-
-      /* Print Main Menu message */
-      FW_APP_PrintMainMenu();
-    }
-  }
-}
 
 #ifdef  USE_FULL_ASSERT
 /**
@@ -428,13 +388,12 @@ void vApplicationIdleHook( void )
 
 
 /* Override HAL Tick weak functions */
-HAL_StatusTypeDef HAL_InitTick( uint32_t TickPriority )
-{
-    ( void ) TickPriority;
-    ( void ) SysTick_Config( SystemCoreClock / 1000 );
-    return HAL_OK;
-}
-
+//HAL_StatusTypeDef HAL_InitTick( uint32_t TickPriority )
+//{
+//    ( void ) TickPriority;
+//    ( void ) SysTick_Config( SystemCoreClock / 1000 );
+//    return HAL_OK;
+//}
 
 void HAL_Delay( uint32_t ulDelayMs )
 {
