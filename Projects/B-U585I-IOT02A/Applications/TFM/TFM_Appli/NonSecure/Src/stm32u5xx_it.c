@@ -22,6 +22,7 @@
 
 #include "stm32u5xx_it.h"
 #include "stm32u5xx_hal.h"
+#include "pilot_config.h"
 
 /** @addtogroup USER_APP User App Example
   * @{
@@ -34,6 +35,14 @@
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
+extern DMA_HandleTypeDef handle_GPDMA1_Channel3;
+extern DMA_HandleTypeDef handle_GPDMA1_Channel4;
+
+extern DMA_HandleTypeDef handle_LPDMA1_Channel0;
+extern DMA_HandleTypeDef handle_LPDMA1_Channel1;
+
+extern SPI_HandleTypeDef handle_SPI_1;
+extern SPI_HandleTypeDef handle_SPI_3;
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
@@ -41,6 +50,91 @@
 /******************************************************************************/
 /*            Cortex-M Processor Exceptions Handlers                         */
 /******************************************************************************/
+
+
+/**
+  * @brief This function handles GPDMA1 Channel 6 global interrupt.
+  */
+void GPDMA1_Channel3_IRQHandler(void)
+{
+  /* USER CODE BEGIN GPDMA1_Channel6_IRQn 0 */
+
+  /* USER CODE END GPDMA1_Channel6_IRQn 0 */
+  HAL_DMA_IRQHandler(&handle_GPDMA1_Channel3);
+  /* USER CODE BEGIN GPDMA1_Channel6_IRQn 1 */
+
+  /* USER CODE END GPDMA1_Channel6_IRQn 1 */
+}
+
+/**
+  * @brief This function handles GPDMA1 Channel 7 global interrupt.
+  */
+void GPDMA1_Channel4_IRQHandler(void)
+{
+  /* USER CODE BEGIN GPDMA1_Channel7_IRQn 0 */
+
+  /* USER CODE END GPDMA1_Channel7_IRQn 0 */
+  HAL_DMA_IRQHandler(&handle_GPDMA1_Channel3);
+  /* USER CODE BEGIN GPDMA1_Channel7_IRQn 1 */
+
+  /* USER CODE END GPDMA1_Channel7_IRQn 1 */
+}
+
+/**
+  * @brief This function handles SPI1 global interrupt.
+  */
+void SPI1_IRQHandler(void)
+{
+  /* USER CODE BEGIN SPI1_IRQn 0 */
+
+  /* USER CODE END SPI1_IRQn 0 */
+  HAL_SPI_IRQHandler(&handle_SPI_1);
+  /* USER CODE BEGIN SPI1_IRQn 1 */
+
+  /* USER CODE END SPI1_IRQn 1 */
+}
+
+/**
+  * @brief This function handles LPDMA1 SmartRun Channel 0 global interrupt.
+  */
+void LPDMA1_Channel0_IRQHandler(void)
+{
+  /* USER CODE BEGIN LPDMA1_Channel0_IRQn 0 */
+
+  /* USER CODE END LPDMA1_Channel0_IRQn 0 */
+  HAL_DMA_IRQHandler(&handle_LPDMA1_Channel0);
+  /* USER CODE BEGIN LPDMA1_Channel0_IRQn 1 */
+
+  /* USER CODE END LPDMA1_Channel0_IRQn 1 */
+}
+
+/**
+  * @brief This function handles LPDMA1 SmartRun Channel 1 global interrupt.
+  */
+void LPDMA1_Channel1_IRQHandler(void)
+{
+  /* USER CODE BEGIN LPDMA1_Channel1_IRQn 0 */
+
+  /* USER CODE END LPDMA1_Channel1_IRQn 0 */
+  HAL_DMA_IRQHandler(&handle_LPDMA1_Channel1);
+  /* USER CODE BEGIN LPDMA1_Channel1_IRQn 1 */
+
+  /* USER CODE END LPDMA1_Channel1_IRQn 1 */
+}
+
+/**
+  * @brief This function handles SPI1 global interrupt.
+  */
+void SPI3_IRQHandler(void)
+{
+  /* USER CODE BEGIN SPI1_IRQn 0 */
+
+  /* USER CODE END SPI1_IRQn 0 */
+  HAL_SPI_IRQHandler(&handle_SPI_3);
+  /* USER CODE BEGIN SPI1_IRQn 1 */
+
+  /* USER CODE END SPI1_IRQn 1 */
+}
 
 /**
   * @brief  This function handles Hard Fault exception.
@@ -114,7 +208,9 @@ void DebugMon_Handler(void)
   */
 void SysTick_Handler(void)
 {
+#ifdef PILOT_RTOS_SUPPORT
   vPortSysTickHandler();
+#endif
   HAL_IncTick();
 }
 

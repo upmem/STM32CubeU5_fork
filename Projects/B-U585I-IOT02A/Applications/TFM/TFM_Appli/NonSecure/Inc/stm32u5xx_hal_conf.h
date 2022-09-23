@@ -23,7 +23,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
+#include "pilot_config.h"
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
 
@@ -79,7 +79,7 @@ extern "C" {
 /* #define HAL_SD_MODULE_ENABLED */
 /* #define HAL_SMARTCARD_MODULE_ENABLED */
 /* #define HAL_SMBUS_MODULE_ENABLED */
-/* #define HAL_SPI_MODULE_ENABLED */
+#define HAL_SPI_MODULE_ENABLED
 /* #define HAL_SRAM_MODULE_ENABLED */
 /* #define HAL_TIM_MODULE_ENABLED */
 /* #define HAL_TSC_MODULE_ENABLED */
@@ -172,9 +172,12 @@ vary depending on the variations in voltage and temperature.*/
   * @brief This is the HAL system configuration section
   */
 #define  VDD_VALUE                    3300UL /*!< Value of VDD in mv */
-#define  TICK_INT_PRIORITY            ((1UL<<__NVIC_PRIO_BITS) - 1UL)  /*!< tick interrupt priority (lowest by default) */
+#define  TICK_INT_PRIORITY            (PILOT_TICK_IRQ_PRIORITY)
+//#define  TICK_INT_PRIORITY            ((1UL<<__NVIC_PRIO_BITS) - 1UL)  /*!< tick interrupt priority (lowest by default) */
 #define  USE_RTOS                     0U
 #define  PREFETCH_ENABLE              1U               /*!< Enable prefetch */
+
+
 
 /* ########################## Assert Selection ############################## */
 /**
@@ -244,7 +247,7 @@ vary depending on the variations in voltage and temperature.*/
  * Activated: CRC code is present inside driver
  * Deactivated: CRC code cleaned from driver
  */
-#define USE_SPI_CRC                   1U
+#define USE_SPI_CRC                   0U
 
 /* ################## SDMMC peripheral configuration ######################### */
 

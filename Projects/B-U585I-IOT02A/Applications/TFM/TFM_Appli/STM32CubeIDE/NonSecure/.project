@@ -46,6 +46,16 @@
 			<locationURI>PARENT-2-PROJECT_LOC/NonSecure/Src/common.c</locationURI>
 		</link>
 		<link>
+			<name>Application/User/dma.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/NonSecure/Src/dma.c</locationURI>
+		</link>
+		<link>
+			<name>Application/User/error.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/NonSecure/Src/error.c</locationURI>
+		</link>
+		<link>
 			<name>Application/User/fw_update_app.c</name>
 			<type>1</type>
 			<locationURI>PARENT-2-PROJECT_LOC/NonSecure/Src/fw_update_app.c</locationURI>
@@ -76,9 +86,19 @@
 			<locationURI>PARENT-2-PROJECT_LOC/NonSecure/Src/ns_data.c</locationURI>
 		</link>
 		<link>
+			<name>Application/User/spi.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/NonSecure/Src/spi.c</locationURI>
+		</link>
+		<link>
 			<name>Application/User/startup_stm32u5xx.c</name>
 			<type>1</type>
 			<locationURI>PARENT-2-PROJECT_LOC/NonSecure/Src/startup_stm32u5xx.c</locationURI>
+		</link>
+		<link>
+			<name>Application/User/stm32u5xx_hal_msp.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/NonSecure/Src/stm32u5xx_hal_msp.c</locationURI>
 		</link>
 		<link>
 			<name>Application/User/stm32u5xx_it.c</name>
@@ -184,6 +204,16 @@
 			<name>Drivers/STM32U5xx_HAL_Driver/stm32u5xx_hal_rcc_ex.c</name>
 			<type>1</type>
 			<locationURI>PARENT-7-PROJECT_LOC/Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_rcc_ex.c</locationURI>
+		</link>
+		<link>
+			<name>Drivers/STM32U5xx_HAL_Driver/stm32u5xx_hal_spi.c</name>
+			<type>1</type>
+			<locationURI>PARENT-7-PROJECT_LOC/Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_spi.c</locationURI>
+		</link>
+		<link>
+			<name>Drivers/STM32U5xx_HAL_Driver/stm32u5xx_hal_spi_ex.c</name>
+			<type>1</type>
+			<locationURI>PARENT-7-PROJECT_LOC/Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_spi_ex.c</locationURI>
 		</link>
 		<link>
 			<name>Drivers/STM32U5xx_HAL_Driver/stm32u5xx_hal_uart.c</name>
