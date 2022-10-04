@@ -226,6 +226,11 @@
 			<locationURI>PARENT-7-PROJECT_LOC/Drivers/STM32U5xx_HAL_Driver/Src/stm32u5xx_hal_uart_ex.c</locationURI>
 		</link>
 		<link>
+			<name>Drivers/System/system.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/NonSecure/Src/system.c</locationURI>
+		</link>
+		<link>
 			<name>Middlewares/trustedfirmware/core/UsefulBuf.c</name>
 			<type>1</type>
 			<locationURI>PARENT-7-PROJECT_LOC/Middlewares/Third_Party/trustedfirmware/lib/ext/qcbor/src/UsefulBuf.c</locationURI>
