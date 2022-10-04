@@ -185,13 +185,11 @@ void SPI_test (void)
 
     /* USER CODE BEGIN 3 */
       HAL_Delay(250);
-      //HAL_SPI_Transmit(&handle_SPI_3, slaveTxBuffer, sizeof(slaveTxBuffer), 100);
       status_spi3 = HAL_SPI_TransmitReceive_IT(&handle_SPI_3, slaveTxBuffer, slaveRxBuffer, sizeof(slaveTxBuffer));
       status_spi1 = HAL_SPI_TransmitReceive(&handle_SPI_1, masterTxBuffer, masterRxBuffer, sizeof(masterTxBuffer), 100);
       printf ("status SPI1 = %d - SPI3 = %d\r\n", status_spi1, status_spi3);
       printf ("Slave RX: %s\r\n", (char *) &slaveRxBuffer);
       printf ("Master RX: %s\r\n", (char *) &masterRxBuffer);
-      //cnt--;
   }
 }
 
