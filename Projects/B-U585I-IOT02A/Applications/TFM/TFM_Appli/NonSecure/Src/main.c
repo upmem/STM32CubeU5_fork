@@ -126,31 +126,6 @@ int putchar(int ch)
 }
 #endif /*  __GNUC__ */
 
-void my_first_task (void *pvParameters) {
-  for (;;) {
-    struct test_result_t ret;
-    ret.val = TEST_FAILED;
-    psa_aead_test(PSA_KEY_TYPE_AES, PSA_ALG_GCM, &ret);
-    printf("%s", (ret.val == TEST_PASSED) ? "1" : "x");
-    HAL_Delay(500);
-  }
-}
-
-void my_second_task (void *pvParameters) {
-  static int cnt;
-  struct test_result_t ret;
-  for (;;) {
-    ret.val = TEST_FAILED;
-    psa_hash_test(PSA_ALG_SHA_256, &ret);
-    printf("%s", (ret.val == TEST_PASSED) ? "2" : "x");
-      cnt ++;
-      if(cnt / 32) {
-        printf("\r\n");
-	cnt = 0;
-      }
-    }
-}
-
 /**
   * @brief  Main program
   * @param  None
@@ -185,7 +160,7 @@ int main(int argc, char **argv)
 
   printf("\r\nApp version %s\r\n", version);
 
-  /* Configure DMAs */
+  /* Configure DMA */
   //DMA_Init();
 
   /* Configure SPI interfaces */
@@ -225,6 +200,30 @@ static void RTOS_Init(void) {
   vTaskStartScheduler();
 }
 
+void my_first_task (void *pvParameters) {
+  for (;;) {
+    struct test_result_t ret;
+    ret.val = TEST_FAILED;
+    psa_aead_test(PSA_KEY_TYPE_AES, PSA_ALG_GCM, &ret);
+    printf("%s", (ret.val == TEST_PASSED) ? "1" : "x");
+    HAL_Delay(500);
+  }
+}
+
+void my_second_task (void *pvParameters) {
+  static int cnt;
+  struct test_result_t ret;
+  for (;;) {
+    ret.val = TEST_FAILED;
+    psa_hash_test(PSA_ALG_SHA_256, &ret);
+    printf("%s", (ret.val == TEST_PASSED) ? "2" : "x");
+      cnt ++;
+      if(cnt / 32) {
+        printf("\r\n");
+	cnt = 0;
+      }
+    }
+}
 
 /**
   * @brief System Clock Configuration

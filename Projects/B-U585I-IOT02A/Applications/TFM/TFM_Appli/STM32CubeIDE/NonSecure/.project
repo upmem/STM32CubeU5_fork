@@ -46,11 +46,6 @@
 			<locationURI>PARENT-2-PROJECT_LOC/NonSecure/Src/common.c</locationURI>
 		</link>
 		<link>
-			<name>Application/User/dma.c</name>
-			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/NonSecure/Src/dma.c</locationURI>
-		</link>
-		<link>
 			<name>Application/User/error.c</name>
 			<type>1</type>
 			<locationURI>PARENT-2-PROJECT_LOC/NonSecure/Src/error.c</locationURI>
@@ -84,11 +79,6 @@
 			<name>Application/User/ns_data.c</name>
 			<type>1</type>
 			<locationURI>PARENT-2-PROJECT_LOC/NonSecure/Src/ns_data.c</locationURI>
-		</link>
-		<link>
-			<name>Application/User/spi.c</name>
-			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/NonSecure/Src/spi.c</locationURI>
 		</link>
 		<link>
 			<name>Application/User/startup_stm32u5xx.c</name>
@@ -134,6 +124,16 @@
 			<name>Drivers/CMSIS/system_stm32u5xx.c</name>
 			<type>1</type>
 			<locationURI>PARENT-2-PROJECT_LOC/NonSecure/Src/system_stm32u5xx.c</locationURI>
+		</link>
+		<link>
+			<name>Drivers/DMA/dma.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/NonSecure/Src/dma.c</locationURI>
+		</link>
+		<link>
+			<name>Drivers/SPI/spi.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/NonSecure/Src/spi.c</locationURI>
 		</link>
 		<link>
 			<name>Drivers/STM32U5xx_HAL_Driver/stm32u5xx_hal.c</name>
