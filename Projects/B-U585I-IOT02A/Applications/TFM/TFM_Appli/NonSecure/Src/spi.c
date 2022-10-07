@@ -18,7 +18,7 @@ SPI_HandleTypeDef handle_SPI_3;
 
 //Configure ILink Nodes to get following ILink-Ring:
 //Master->DPU1->DPU0->DPU2->DPU3-->DPU4->DPU5->DPU7->DPU6->Master
-const uint16_t spi_init_seq[] = {
+const uint16_t spi_gi_init_seq[] = {
   SPI_GI_CMD_SELECT_NO_IGNORE,
   SPI_GI_CMD_DPU1_WRITE_REG_IDENTITY,
   SPI_GI_CMD_WRITE_REG_IGNORE,
@@ -45,13 +45,13 @@ const uint16_t spi_init_seq[] = {
   SPI_GI_CMD_WRITE_REG_IGNORE,
 };
 
-const uint16_t spi_chipid_7_0_seq[] = {
+const uint16_t spi_gi_chipid_lsb_seq[] = {
   SPI_GI_CMD_CHIP_ID_7_0,
   SPI_GI_CMD_NOP,
   SPI_GI_CMD_NOP,
 };
 
-const uint16_t spi_chipid_15_8_seq[] = {
+const uint16_t spi_gi_chipid_msb_seq[] = {
   SPI_GI_CMD_CHIP_ID_15_8,
   SPI_GI_CMD_NOP,
   SPI_GI_CMD_NOP,
@@ -332,8 +332,8 @@ void SPI_test (void)
 HAL_StatusTypeDef SPI_GI_Send_InitSequence(void)
 {
   /* send init sequence, 16bit spi transfert */
-  return SPI_GI_Transmit_Receive((uint16_t*)spi_init_seq, NULL,
-      COUNTOF(spi_init_seq), SPI_TRANSFERT_MODE_16BIT_BLOCKING);
+  return SPI_GI_Transmit_Receive((uint16_t*)spi_gi_init_seq, NULL,
+      COUNTOF(spi_gi_init_seq), SPI_TRANSFERT_MODE_16BIT_BLOCKING);
 }
 
 
@@ -341,19 +341,19 @@ HAL_StatusTypeDef SPI_GI_Read_ChipID(void)
 {
   HAL_StatusTypeDef status_spi;
   uint16_t chip_id = 0;
-  uint16_t spi_chipid_response [COUNTOF(spi_chipid_7_0_seq)];
+  uint16_t spi_gi_response [COUNTOF(spi_gi_chipid_lsb_seq)];
   GI_response_word_t rx_word_lsb, rx_word_msb;
 
   /* Send SPI commands to get chip ID LSB */
-  status_spi = SPI_GI_Transmit_Receive((uint16_t*)spi_chipid_7_0_seq, spi_chipid_response,
-      COUNTOF(spi_chipid_7_0_seq), SPI_TRANSFERT_MODE_BURST_BLOCKING);
-  rx_word_lsb.word = spi_chipid_response[2]; /* 2 first words are NOP */
+  status_spi = SPI_GI_Transmit_Receive((uint16_t*)spi_gi_chipid_lsb_seq, spi_gi_response,
+      COUNTOF(spi_gi_chipid_lsb_seq), SPI_TRANSFERT_MODE_BURST_BLOCKING);
+  rx_word_lsb.word = spi_gi_response[2]; /* 2 first words are NOP */
   print_GI_word(rx_word_lsb);
 
   /* Send SPI commands to get chip ID MSB */
-  status_spi = SPI_GI_Transmit_Receive((uint16_t*)spi_chipid_15_8_seq, spi_chipid_response,
-      COUNTOF(spi_chipid_15_8_seq), SPI_TRANSFERT_MODE_BURST_BLOCKING);
-  rx_word_msb.word = spi_chipid_response[2]; /* 2 first words are NOP */
+  status_spi = SPI_GI_Transmit_Receive((uint16_t*)spi_gi_chipid_msb_seq, spi_gi_response,
+      COUNTOF(spi_gi_chipid_msb_seq), SPI_TRANSFERT_MODE_BURST_BLOCKING);
+  rx_word_msb.word = spi_gi_response[2]; /* 2 first words are NOP */
   print_GI_word(rx_word_msb);
 
   /* build ChipID from LSB and MSB */
