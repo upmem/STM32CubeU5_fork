@@ -9,7 +9,24 @@
 
 #include <stdint.h>
 #include "stm32u5xx.h"
+#include "stm32u5xx_hal.h"
 
 void SPI_Init(void);
 void SPI_test (void);
+HAL_StatusTypeDef SPI_GI_Send_InitSequence(void);
+HAL_StatusTypeDef SPI_GI_Read_ChipID(void);
+
+typedef enum
+{
+  SPI_TRANSFERT_MODE_16BIT_BLOCKING = 0U,
+  SPI_TRANSFERT_MODE_BURST_BLOCKING,
+  SPI_TRANSFERT_MODE_DMA,
+
+} SPI_TransfertMode;
+
+#define COUNTOF(array) (sizeof(array)/sizeof(array[0]))
+
+extern SPI_HandleTypeDef handle_SPI_1;
+extern SPI_HandleTypeDef handle_SPI_3;
+
 #endif /* __SPI_H__ */

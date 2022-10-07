@@ -156,7 +156,7 @@ int main(int argc, char **argv)
   printf("\r\nApp version %s\r\n", version);
 
   /* Configure DMA */
-  //DMA_Init();
+  DMA_Init();
 
   /* Configure SPI interfaces */
   SPI_Init();
@@ -170,7 +170,9 @@ int main(int argc, char **argv)
     TEST_PROTECTIONS_Run_SecUserMem();
   }
 
-  SPI_test();
+  //SPI_test();
+  SPI_GI_Send_InitSequence();
+  SPI_GI_Read_ChipID();
   /* TODO uncomment it */
 #ifdef  PILOT_RTOS_SUPPORT
   RTOS_Init();
