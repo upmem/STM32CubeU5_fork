@@ -21,3 +21,4 @@ output.txt
 **/EWARM/*.template
 **/EWARM/*.c
 **/TFM/settings
+*.pyc
