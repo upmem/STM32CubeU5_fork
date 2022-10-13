@@ -56,6 +56,11 @@
 			<locationURI>PARENT-2-PROJECT_LOC/NonSecure/Src/fw_update_app.c</locationURI>
 		</link>
 		<link>
+			<name>Application/User/gi_msg_handler.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/NonSecure/Src/gi_msg_handler.c</locationURI>
+		</link>
+		<link>
 			<name>Application/User/low_level_device.c</name>
 			<type>1</type>
 			<locationURI>PARENT-2-PROJECT_LOC/NonSecure/Src/low_level_device.c</locationURI>

@@ -13,6 +13,10 @@
 
 void SPI_Init(void);
 void SPI_test (void);
+int SPI_tx (uint16_t* tx_buf, uint16_t len);
+int SPI_rx (uint16_t* rx_buf, uint16_t len);
+
+
 HAL_StatusTypeDef SPI_GI_Send_InitSequence(void);
 HAL_StatusTypeDef SPI_GI_Read_ChipID(void);
 
