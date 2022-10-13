@@ -210,6 +210,30 @@ void SPI_Init(void)
   MX_SPI3_Init();
 }
 
+int SPI_tx (uint16_t* tx_buf, uint16_t len) {
+  int status = PILOT_SUCCESS;
+  for (uint32_t i = 0; i < len; i++)
+  {
+    if (HAL_SPI_Transmit(&handle_SPI_1, (uint8_t *)&(tx_buf[i]), 1, SPI_16BIT_TIMEOUT_MS) != 0) {
+	status = PILOT_FAILURE;
+	break;
+    }
+  }
+  return status;
+}
+
+int SPI_rx (uint16_t* rx_buf, uint16_t len) {
+  int status = PILOT_SUCCESS;
+  for (uint32_t i = 0; i < len; i++)
+  {
+    if (HAL_SPI_Receive(&handle_SPI_1, (uint8_t *)&(rx_buf[i]), 1, SPI_16BIT_TIMEOUT_MS) != 0) {
+	status = PILOT_FAILURE;
+	break;
+    }
+  }
+  return status;
+}
+
 /**
   * @brief  Transmit and Receive data to Global Interface using SPI
   * @param  tx_buf: pointer to transmission data buffer, can be NULL if receive only

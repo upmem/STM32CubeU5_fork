@@ -9,6 +9,9 @@
 
 #include <stddef.h>
 
+#define PILOT_SUCCESS	(0x5A)
+#define PILOT_FAILURE	(0xA5)
+
 #define Error_Handler() pilot_error(__FILE__, __LINE__)
 
 void pilot_error(char* file, int line);
