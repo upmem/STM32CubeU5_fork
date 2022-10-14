@@ -15,6 +15,5 @@ extern DMA_HandleTypeDef handle_GPDMA1_Channel7;
 extern DMA_HandleTypeDef handle_GPDMA1_Channel6;
 
 void DMA_Init(void);
-void DMA_Config(void);
 
 #endif /* __DMA_H__ */

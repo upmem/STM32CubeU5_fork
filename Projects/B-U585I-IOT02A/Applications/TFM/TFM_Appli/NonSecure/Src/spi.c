@@ -270,6 +270,7 @@ static HAL_StatusTypeDef SPI_GI_Transmit_Receive(uint16_t* tx_buf, uint16_t* rx_
 
 #ifdef SPI_DEBUG
   printf ("SPI Debug:\r\n");
+  printf ("  mode: %d\r\n",mode);
   printf ("  status: %d\r\n",status);
   if (tx_buf != NULL)
   {
