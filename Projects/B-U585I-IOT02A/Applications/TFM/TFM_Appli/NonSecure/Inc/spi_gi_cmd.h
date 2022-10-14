@@ -42,15 +42,10 @@
  * [7:0] Result data (RESULT[7:0])
  */
 
-typedef union {
-  struct {
-    uint16_t result:8;
-    uint16_t result_odd_flag:1;
-    uint16_t reserved:1;
-    uint16_t result_valid_flag:3;
-    uint16_t previous_odd_flag:3;
-  };
-  uint16_t word;
-} GI_response_word_t;
+#define GI_RESPONSE_GET_PREVIOUS_ODD_FLAG(x) ((x & 0xE000) >> 13)
+#define GI_RESPONSE_GET_RESULT_VALID_FLAG(x) ((x & 0x1C00) >> 10)
+#define GI_RESPONSE_GET_RESERVED(x)          ((x & 0x0200) >> 9)
+#define GI_RESPONSE_GET_ODD_FLAG(x)          ((x & 0x0100) >> 8)
+#define GI_RESPONSE_GET_RESULT(x)            ((x & 0x00FF) >> 0)
 
 #endif /* __SPI_GI_CMD_H__ */

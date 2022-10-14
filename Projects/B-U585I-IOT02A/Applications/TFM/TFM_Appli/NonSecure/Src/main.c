@@ -161,6 +161,9 @@ int main(int argc, char **argv)
   /* Configure SPI interfaces */
   SPI_Init();
 
+  /* Attach DMA to peripherals (SPI, ...) */
+  DMA_Config();
+
   tfm_ns_interface_init();
 
   /* test if an automatic test protection is launched */
