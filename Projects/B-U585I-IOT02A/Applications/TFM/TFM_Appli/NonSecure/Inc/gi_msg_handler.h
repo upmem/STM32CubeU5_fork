@@ -32,24 +32,29 @@
 #define DPU_NR		(0x8)
 
 /* Parity bit logic */
+
 #define PARITY16(x) PARITY8((x) ^ ((x) >> 8))
 #define PARITY8(x)  PARITY4((x) ^ ((x) >> 4))
 #define PARITY4(x)  PARITY2((x) ^ ((x) >> 2))
 #define PARITY2(x)  (((x) ^ ((x) >> 1)) & 1)
+//#define EVEN_PARITY(word)              (~(PARITY16(word))& 1)
 
-#define EVEN_PARITY(word)		(~(PARITY16(word))& 1)
 
+#define EVEN_PARITY(word)		(~(__builtin_parity(word)) & 1)
 
-#define SET_B_PARITY(word)		(word |  EVEN_PARITY(word) << 8)
+#define AB_BITS_DELTA(word)		((__builtin_popcount(word) < 3 ) ? (word | (((1 << (3 - __builtin_popcount(word))) -1) << 8)) : word )
+#define AB_PARITY(word)			((word & (1 << 8)) ? (word | EVEN_PARITY(word) << 9) : (word | EVEN_PARITY(word) << 8))
+/* Not correct, to rework*/
+#define SET_AB(word)			(AB_PARITY(AB_BITS_DELTA(word)))
 #define SET_MSB_PARITY(word)		(word |  EVEN_PARITY(word) << 12)
 
 /* CMD GET_1RESULT */
-#define CMD_GET_1RESULT_CHIP_ID_LSB	(SET_B_PARITY(WORD_CMD_1 | 0x0))
-#define CMD_GET_1RESULT_CHIP_ID_MSB	(SET_B_PARITY(WORD_CMD_1 | 0x1))
-#define CMD_GET_1RESULT_PLL_LOCK	(SET_B_PARITY(WORD_CMD_1 | 0x2))
-#define CMD_GET_1RESULT_CHECK_RES	(SET_B_PARITY(WORD_CMD_1 | 0x3))
-#define CMD_GET_1RESULT_TEMP_DEFECT	(SET_B_PARITY(WORD_CMD_1 | 0x4))
-#define CMD_GET_1RESULT_SPINE_TEMP	(SET_B_PARITY(WORD_CMD_1 | 0x5))
+#define CMD_GET_1RESULT_CHIP_ID_LSB	(SET_AB(WORD_CMD_1 | 0x0))
+#define CMD_GET_1RESULT_CHIP_ID_MSB	(SET_AB(WORD_CMD_1 | 0x1))
+#define CMD_GET_1RESULT_PLL_LOCK	(SET_AB(WORD_CMD_1 | 0x2))
+#define CMD_GET_1RESULT_CHECK_RES	(SET_AB(WORD_CMD_1 | 0x3))
+#define CMD_GET_1RESULT_TEMP_DEFECT	(SET_AB(WORD_CMD_1 | 0x4))
+#define CMD_GET_1RESULT_SPINE_TEMP	(SET_AB(WORD_CMD_1 | 0x5))
 
 /*CMD SELECT */
 #define CMD_SELECT_MODE_FIRST		(0x4 << 9)
@@ -57,8 +62,8 @@
 #define CMD_SELECT_MODE_ALL		(0x6 << 9)
 #define CMD_SELECT_MODE_LNKE		(0x7 << 9)
 
-#define CMD_SELECT_FIRST 		(SET_B_PARITY(WORD_CMD_3 | CMD_SELECT_MODE_FIRST))
-#define CMD_SELECT_ID(dpu_id)		(SET_B_PARITY(WORD_CMD_3 | CMD_SELECT_MODE_ID, | dpu_id))
+#define CMD_SELECT_FIRST 		(SET_AB(WORD_CMD_3 | CMD_SELECT_MODE_FIRST))
+#define CMD_SELECT_ID(dpu_id)		(SET_AB(WORD_CMD_3 | CMD_SELECT_MODE_ID, | dpu_id))
 
 /* CMD WRITE_REG */
 #define CMD_WRITE_REG_ADDR_NODE_ID	(0x0 << 8)

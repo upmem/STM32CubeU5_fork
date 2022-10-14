@@ -39,6 +39,8 @@ __asm("  .global __ARM_use_no_argv\n");
 #include "FreeRTOS.h"
 #include "task.h"
 
+#include "commit.h"
+
 #include "dma.h"
 #include "spi.h"
 #include "system.h"
@@ -153,7 +155,7 @@ int main(int argc, char **argv)
   /* Configure Communication module */
   COM_Init();
 
-  printf("\r\nApp version %s\r\n", version);
+  printf("\r\nApp version %s %s\r\n", version, commit);
 
   /* Configure DMA */
   DMA_Init();
