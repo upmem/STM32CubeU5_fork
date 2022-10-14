@@ -23,21 +23,6 @@ static void MX_GPDMA1_Init(void)
   /* Peripheral clock enable */
   __HAL_RCC_GPDMA1_CLK_ENABLE();
 
-  /* GPDMA1 interrupt Init */
-  HAL_NVIC_SetPriority(GPDMA1_Channel6_IRQn, PILOT_GPDMA_IRQ_PRIORITY, 0);
-  HAL_NVIC_EnableIRQ(GPDMA1_Channel6_IRQn);
-  HAL_NVIC_SetPriority(GPDMA1_Channel7_IRQn, PILOT_GPDMA_IRQ_PRIORITY, 0);
-  HAL_NVIC_EnableIRQ(GPDMA1_Channel7_IRQn);
-}
-
-
-void DMA_Init(void)
-{
-  MX_GPDMA1_Init();
-}
-
-void DMA_Config(void)
-{
   /* GPDMA1_REQUEST_SPI1_TX Init */
   handle_GPDMA1_Channel7.Instance = GPDMA1_Channel7;
   handle_GPDMA1_Channel7.Init.Request = GPDMA1_REQUEST_SPI1_TX;
@@ -92,4 +77,14 @@ void DMA_Config(void)
     Error_Handler();
   }
 
+  /* GPDMA1 interrupt Init */
+  HAL_NVIC_SetPriority(GPDMA1_Channel6_IRQn, PILOT_GPDMA_IRQ_PRIORITY, 0);
+  HAL_NVIC_EnableIRQ(GPDMA1_Channel6_IRQn);
+  HAL_NVIC_SetPriority(GPDMA1_Channel7_IRQn, PILOT_GPDMA_IRQ_PRIORITY, 0);
+  HAL_NVIC_EnableIRQ(GPDMA1_Channel7_IRQn);
+}
+
+void DMA_Init(void)
+{
+  MX_GPDMA1_Init();
 }
