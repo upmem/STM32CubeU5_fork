@@ -16,13 +16,10 @@ void SPI_test (void);
 HAL_StatusTypeDef SPI_GI_Send_InitSequence(void);
 HAL_StatusTypeDef SPI_GI_Read_ChipID(void);
 
-typedef enum
-{
-  SPI_TRANSFERT_MODE_16BIT_BLOCKING = 0U,
-  SPI_TRANSFERT_MODE_BURST_BLOCKING,
-  SPI_TRANSFERT_MODE_DMA,
-
-} SPI_TransfertMode;
+/* possible transfert modes for SPI */
+#define SPI_TRANSFERT_MODE_16BIT_BLOCKING  0
+#define SPI_TRANSFERT_MODE_BURST_BLOCKING  1
+#define SPI_TRANSFERT_MODE_DMA             2
 
 #define COUNTOF(array) (sizeof(array)/sizeof(array[0]))
 

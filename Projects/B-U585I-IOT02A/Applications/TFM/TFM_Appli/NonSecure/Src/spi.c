@@ -218,47 +218,54 @@ void SPI_Init(void)
   * @param  mode  : SPI transfert mode, to send either 16bit mode or in burst mode
   * @retval HAL status
   */
-static HAL_StatusTypeDef SPI_GI_Transmit_Receive(uint16_t* tx_buf, uint16_t* rx_buf, uint16_t len, SPI_TransfertMode mode)
+static HAL_StatusTypeDef SPI_GI_Transmit_Receive(uint16_t* tx_buf, uint16_t* rx_buf, uint16_t len, int mode)
 {
   uint16_t i;
   HAL_StatusTypeDef status = HAL_ERROR;
 
-  /* Send SPI buffer items one by one (ie ChipSelect asserted and de-asserted every uint16_t) */
-  if (mode == SPI_TRANSFERT_MODE_16BIT_BLOCKING)
+  assert((tx_buf != NULL)||(rx_buf != NULL));
+
+  switch(mode)
   {
-    for (i=0; i<len; i++)
-    {
+    /* Send SPI buffer items one by one (ie ChipSelect asserted and de-asserted every uint16_t) */
+    case SPI_TRANSFERT_MODE_16BIT_BLOCKING:
+      for (i=0; i<len; i++)
+      {
+        if (rx_buf != NULL && tx_buf != NULL)
+          status = HAL_SPI_TransmitReceive(&handle_SPI_1, (uint8_t *)&(tx_buf[i]), (uint8_t *)&(rx_buf[i]), 1, SPI_16BIT_TIMEOUT_MS);
+        else if (rx_buf == NULL && tx_buf != NULL)
+          status = HAL_SPI_Transmit(&handle_SPI_1, (uint8_t *)&(tx_buf[i]), 1, SPI_16BIT_TIMEOUT_MS);
+        else if (rx_buf != NULL && tx_buf == NULL)
+          status = HAL_SPI_Receive(&handle_SPI_1, (uint8_t *)&(rx_buf[i]), 1, SPI_16BIT_TIMEOUT_MS);
+        if (status != HAL_OK)
+          break;
+      }
+      break;
+
+    /* Send SPI buffer in a single BURST (ie ChipSelect asserted only once) */
+    case SPI_TRANSFERT_MODE_BURST_BLOCKING:
       if (rx_buf != NULL && tx_buf != NULL)
-        status = HAL_SPI_TransmitReceive(&handle_SPI_1, (uint8_t *)&(tx_buf[i]), (uint8_t *)&(rx_buf[i]), 1, SPI_16BIT_TIMEOUT_MS);
+        status = HAL_SPI_TransmitReceive(&handle_SPI_1, (uint8_t *)tx_buf, (uint8_t *)rx_buf, len, SPI_16BIT_TIMEOUT_MS*len);
       else if (rx_buf == NULL && tx_buf != NULL)
-        status = HAL_SPI_Transmit(&handle_SPI_1, (uint8_t *)&(tx_buf[i]), 1, SPI_16BIT_TIMEOUT_MS);
+        status = HAL_SPI_Transmit(&handle_SPI_1, (uint8_t *)tx_buf, len, SPI_16BIT_TIMEOUT_MS*len);
       else if (rx_buf != NULL && tx_buf == NULL)
-        status = HAL_SPI_Receive(&handle_SPI_1, (uint8_t *)&(rx_buf[i]), 1, SPI_16BIT_TIMEOUT_MS);
-      if (status != HAL_OK)
-        break;
-    }
-  }
+        status = HAL_SPI_Receive(&handle_SPI_1, (uint8_t *)rx_buf, len, SPI_16BIT_TIMEOUT_MS*len);
+      break;
 
-  /* Send SPI buffer in a single BURST (ie ChipSelect asserted only once) */
-  else if (mode == SPI_TRANSFERT_MODE_BURST_BLOCKING)
-  {
-    if (rx_buf != NULL && tx_buf != NULL)
-      status = HAL_SPI_TransmitReceive(&handle_SPI_1, (uint8_t *)tx_buf, (uint8_t *)rx_buf, len, SPI_16BIT_TIMEOUT_MS*len);
-    else if (rx_buf == NULL && tx_buf != NULL)
-      status = HAL_SPI_Transmit(&handle_SPI_1, (uint8_t *)tx_buf, len, SPI_16BIT_TIMEOUT_MS*len);
-    else if (rx_buf != NULL && tx_buf == NULL)
-      status = HAL_SPI_Receive(&handle_SPI_1, (uint8_t *)rx_buf, len, SPI_16BIT_TIMEOUT_MS*len);
-  }
+    /* Send SPI buffer using DMA (ChipSelect asserted only once) */
+    case SPI_TRANSFERT_MODE_DMA:
+      if (rx_buf != NULL && tx_buf != NULL)
+        status = HAL_SPI_TransmitReceive_DMA(&handle_SPI_1, (uint8_t *)tx_buf, (uint8_t *)rx_buf, len);
+      else if (rx_buf == NULL && tx_buf != NULL)
+        status = HAL_SPI_Transmit_DMA(&handle_SPI_1, (uint8_t *)tx_buf, len);
+      else if (rx_buf != NULL && tx_buf == NULL)
+        status = HAL_SPI_Receive_DMA(&handle_SPI_1, (uint8_t *)rx_buf, len);
+      break;
 
-  /* Send SPI buffer using DMA (ChipSelect asserted only once) */
-  else if (mode == SPI_TRANSFERT_MODE_DMA)
-  {
-    if (rx_buf != NULL && tx_buf != NULL)
-      status = HAL_SPI_TransmitReceive_DMA(&handle_SPI_1, (uint8_t *)tx_buf, (uint8_t *)rx_buf, len);
-    else if (rx_buf == NULL && tx_buf != NULL)
-      status = HAL_SPI_Transmit_DMA(&handle_SPI_1, (uint8_t *)tx_buf, len);
-    else if (rx_buf != NULL && tx_buf == NULL)
-      status = HAL_SPI_Receive_DMA(&handle_SPI_1, (uint8_t *)rx_buf, len);
+    /* unknown mode : return error */
+    default:
+      status = HAL_ERROR;
+      break;
   }
 
 #ifdef SPI_DEBUG
@@ -283,14 +290,14 @@ static HAL_StatusTypeDef SPI_GI_Transmit_Receive(uint16_t* tx_buf, uint16_t* rx_
   return status;
 }
 
-void print_GI_word(GI_response_word_t word)
+static void print_GI_word(uint16_t word)
 {
-  printf("word: 0x%04x\r\n", word.word);
-  printf("  result: 0x%02x\r\n", word.result);
-  printf("  result_odd_flag: 0x%01x\r\n", word.result_odd_flag);
-  printf("  reserved: 0x%01x\r\n", word.reserved);
-  printf("  result_valid_flag: 0x%01x\r\n", word.result_valid_flag);
-  printf("  previous_odd_flag: 0x%01x\r\n", word.previous_odd_flag);
+  printf("word: 0x%04x\r\n", word);
+  printf("  result: 0x%02x\r\n", GI_RESPONSE_GET_RESULT(word));
+  printf("  result_odd_flag: 0x%01x\r\n", GI_RESPONSE_GET_ODD_FLAG(word));
+  printf("  reserved: 0x%01x\r\n", GI_RESPONSE_GET_RESERVED(word));
+  printf("  result_valid_flag: 0x%01x\r\n", GI_RESPONSE_GET_RESULT_VALID_FLAG(word));
+  printf("  previous_odd_flag: 0x%01x\r\n", GI_RESPONSE_GET_PREVIOUS_ODD_FLAG(word));
 }
 
 void SPI_test (void)
@@ -342,22 +349,22 @@ HAL_StatusTypeDef SPI_GI_Read_ChipID(void)
   HAL_StatusTypeDef status_spi;
   uint16_t chip_id = 0;
   uint16_t spi_gi_response [COUNTOF(spi_gi_chipid_lsb_seq)];
-  GI_response_word_t rx_word_lsb, rx_word_msb;
+  uint16_t rx_word_lsb, rx_word_msb;
 
   /* Send SPI commands to get chip ID LSB */
   status_spi = SPI_GI_Transmit_Receive((uint16_t*)spi_gi_chipid_lsb_seq, spi_gi_response,
       COUNTOF(spi_gi_chipid_lsb_seq), SPI_TRANSFERT_MODE_BURST_BLOCKING);
-  rx_word_lsb.word = spi_gi_response[2]; /* 2 first words are NOP */
+  rx_word_lsb = spi_gi_response[2]; /* 2 first words are NOP */
   print_GI_word(rx_word_lsb);
 
   /* Send SPI commands to get chip ID MSB */
   status_spi = SPI_GI_Transmit_Receive((uint16_t*)spi_gi_chipid_msb_seq, spi_gi_response,
       COUNTOF(spi_gi_chipid_msb_seq), SPI_TRANSFERT_MODE_BURST_BLOCKING);
-  rx_word_msb.word = spi_gi_response[2]; /* 2 first words are NOP */
+  rx_word_msb = spi_gi_response[2]; /* 2 first words are NOP */
   print_GI_word(rx_word_msb);
 
   /* build ChipID from LSB and MSB */
-  chip_id = (rx_word_msb.result << 8) + rx_word_lsb.result;
+  chip_id = (GI_RESPONSE_GET_RESULT(rx_word_msb) << 8) + GI_RESPONSE_GET_RESULT(rx_word_lsb);
 
   /* check result */
   printf ("Chip ID: 0x%04x - Expected: 0x%04x - SPI status: %d\r\n", chip_id, CHIP_ID_FPGA, status_spi);
