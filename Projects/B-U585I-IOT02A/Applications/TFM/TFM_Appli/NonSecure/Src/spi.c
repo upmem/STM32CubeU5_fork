@@ -7,7 +7,6 @@
 #include "spi.h"
 #include "spi_gi_cmd.h"
 #include "stm32u5xx_hal.h"
-#include "error.h"
 #include "stdio.h"
 
 SPI_HandleTypeDef handle_SPI_1;
@@ -234,6 +233,29 @@ int SPI_rx (uint16_t* rx_buf, uint16_t len) {
   return status;
 }
 
+#ifdef SPI_DEBUG
+static void SPI_debug (uint16_t* tx_buf, uint16_t* rx_buf, uint16_t len, int mode, HAL_StatusTypeDef status) {
+  uint16_t i;
+  printf ("SPI Debug:\r\n");
+  printf ("  mode: %d\r\n",mode);
+  printf ("  status: %d\r\n",status);
+  if (tx_buf != NULL)
+  {
+    printf ("  TX: ");
+    for (i=0; i<len; i++)
+      printf ("0x%04x ",tx_buf[i]);
+    printf ("\r\n");
+  }
+  if (rx_buf != NULL)
+  {
+    printf ("  RX: ");
+    for (i=0; i<len; i++)
+      printf ("0x%04x ",rx_buf[i]);
+    printf ("\r\n");
+  }
+
+}
+#endif
 /**
   * @brief  Transmit and Receive data to Global Interface using SPI
   * @param  tx_buf: pointer to transmission data buffer, can be NULL if receive only
@@ -242,9 +264,10 @@ int SPI_rx (uint16_t* rx_buf, uint16_t len) {
   * @param  mode  : SPI transfert mode, to send either 16bit mode or in burst mode
   * @retval HAL status
   */
-static HAL_StatusTypeDef SPI_GI_Transmit_Receive(uint16_t* tx_buf, uint16_t* rx_buf, uint16_t len, int mode)
+pilot_error_t SPI_GI_Transmit_Receive(uint16_t* tx_buf, uint16_t* rx_buf, uint16_t len, int mode)
 {
   uint16_t i;
+  pilot_error_t err = PILOT_FAILURE;
   HAL_StatusTypeDef status = HAL_ERROR;
 
   assert((tx_buf != NULL)||(rx_buf != NULL));
@@ -293,26 +316,20 @@ static HAL_StatusTypeDef SPI_GI_Transmit_Receive(uint16_t* tx_buf, uint16_t* rx_
   }
 
 #ifdef SPI_DEBUG
-  printf ("SPI Debug:\r\n");
-  printf ("  mode: %d\r\n",mode);
-  printf ("  status: %d\r\n",status);
-  if (tx_buf != NULL)
-  {
-    printf ("  TX: ");
-    for (i=0; i<len; i++)
-      printf ("0x%04x ",tx_buf[i]);
-    printf ("\r\n");
-  }
-  if (rx_buf != NULL)
-  {
-    printf ("  RX: ");
-    for (i=0; i<len; i++)
-      printf ("0x%04x ",rx_buf[i]);
-    printf ("\r\n");
-  }
+  SPI_debug (tx_buf, rx_buf, len, mode, status);
 #endif
 
-  return status;
+  if (status == HAL_OK) {
+    err = PILOT_SUCCESS;
+  }
+  return err;
+}
+
+HAL_StatusTypeDef SPI_GI_Send_InitSequence(void)
+{
+  /* send init sequence, 16bit spi transfert */
+  return SPI_GI_Transmit_Receive((uint16_t*)spi_gi_init_seq, NULL,
+      COUNTOF(spi_gi_init_seq), SPI_TRANSFERT_MODE_16BIT_BLOCKING);
 }
 
 static void print_GI_word(uint16_t word)
@@ -324,50 +341,6 @@ static void print_GI_word(uint16_t word)
   printf("  result_valid_flag: 0x%01x\r\n", GI_RESPONSE_GET_RESULT_VALID_FLAG(word));
   printf("  previous_odd_flag: 0x%01x\r\n", GI_RESPONSE_GET_PREVIOUS_ODD_FLAG(word));
 }
-
-void SPI_test (void)
-{
-  /* Buffer used for transmission */
-  uint16_t masterTxBuffer[] = {'S', 'P', 'I', 'M', '_', 'T', 'X'};
-  uint16_t slaveTxBuffer[] =  {'S', 'P', 'I', 'S', '_', 'T', 'X'};
-  /* Buffer used for reception */
-  uint16_t masterRxBuffer[COUNTOF(slaveTxBuffer)];
-  uint16_t slaveRxBuffer[COUNTOF(masterTxBuffer)];
-  uint16_t i = 0;
-  HAL_StatusTypeDef status_spi1, status_spi3;
-
-  printf ("Slave TX: 0x");
-  for(i=0; i<COUNTOF(slaveTxBuffer); i++) printf("%04x ", slaveTxBuffer[i]);
-  printf ("\r\nMaster TX: 0x");
-  for(i=0; i<COUNTOF(masterTxBuffer); i++) printf("%04x ", masterTxBuffer[i]);
-  printf ("\r\nSlave RX: 0x");
-  for(i=0; i<COUNTOF(slaveRxBuffer); i++) printf("%04x ", slaveRxBuffer[i]);
-  printf ("\r\nMaster RX: 0x");
-  for(i=0; i<COUNTOF(masterRxBuffer); i++) printf("%04x ", masterRxBuffer[i]);
-  printf ("\r\n");
-
-  while (1)
-  {
-      HAL_Delay(250);
-      HAL_GPIO_TogglePin(GPIOH, GPIO_PIN_6); // RED LED toggle
-      status_spi3 = HAL_SPI_TransmitReceive_IT(&handle_SPI_3, (uint8_t*)slaveTxBuffer, (uint8_t*)slaveRxBuffer, COUNTOF(slaveTxBuffer));
-      status_spi1 = HAL_SPI_TransmitReceive(&handle_SPI_1, (uint8_t*)masterTxBuffer, (uint8_t*)masterRxBuffer, COUNTOF(masterTxBuffer), SPI_16BIT_TIMEOUT_MS*COUNTOF(masterTxBuffer));
-      printf ("status SPI1 = %d - SPI3 = %d\r\n", status_spi1, status_spi3);
-      printf ("Slave RX: 0x");
-      for(i=0; i<COUNTOF(slaveRxBuffer); i++) printf("%04x ", slaveRxBuffer[i]);
-      printf ("\r\nMaster RX: 0x");
-      for(i=0; i<COUNTOF(masterRxBuffer); i++) printf("%04x ", masterRxBuffer[i]);
-      printf ("\r\n");
-  }
-}
-
-HAL_StatusTypeDef SPI_GI_Send_InitSequence(void)
-{
-  /* send init sequence, 16bit spi transfert */
-  return SPI_GI_Transmit_Receive((uint16_t*)spi_gi_init_seq, NULL,
-      COUNTOF(spi_gi_init_seq), SPI_TRANSFERT_MODE_16BIT_BLOCKING);
-}
-
 
 HAL_StatusTypeDef SPI_GI_Read_ChipID(void)
 {

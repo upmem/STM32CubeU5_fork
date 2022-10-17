@@ -32,14 +32,11 @@
 #define DPU_NR		(0x8)
 
 /* Parity bit logic */
-
-#define PARITY16(x) PARITY8((x) ^ ((x) >> 8))
-#define PARITY8(x)  PARITY4((x) ^ ((x) >> 4))
-#define PARITY4(x)  PARITY2((x) ^ ((x) >> 2))
-#define PARITY2(x)  (((x) ^ ((x) >> 1)) & 1)
+//#define PARITY16(x) PARITY8((x) ^ ((x) >> 8))
+//#define PARITY8(x)  PARITY4((x) ^ ((x) >> 4))
+//#define PARITY4(x)  PARITY2((x) ^ ((x) >> 2))
+//#define PARITY2(x)  (((x) ^ ((x) >> 1)) & 1)
 //#define EVEN_PARITY(word)              (~(PARITY16(word))& 1)
-
-
 #define EVEN_PARITY(word)		(~(__builtin_parity(word)) & 1)
 
 #define AB_BITS_DELTA(word)		((__builtin_popcount(word) < 3 ) ? (word | (((1 << (3 - __builtin_popcount(word))) -1) << 8)) : word )
@@ -74,4 +71,9 @@
 
 /* CMD NOP */
 #define CMD_NOP				(WORD_CMD_E)
+
+
+
+void gi_DPU_init (void);
+void gi_dump_LNKE_status (void);
 #endif

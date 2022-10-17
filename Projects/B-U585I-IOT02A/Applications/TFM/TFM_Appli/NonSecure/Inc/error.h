@@ -9,8 +9,9 @@
 
 #include <stddef.h>
 
-#define PILOT_SUCCESS	(0x5A)
-#define PILOT_FAILURE	(0xA5)
+typedef uint32_t pilot_error_t;
+#define PILOT_SUCCESS	((pilot_error_t)0x5A)
+#define PILOT_FAILURE	((pilot_error_t)0xA5)
 
 #define Error_Handler() pilot_error(__FILE__, __LINE__)
 
