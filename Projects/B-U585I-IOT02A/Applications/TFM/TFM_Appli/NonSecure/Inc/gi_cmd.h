@@ -71,7 +71,6 @@
 #define DPU_ID_5	(0x5)
 #define DPU_ID_6	(0x6)
 #define DPU_ID_7	(0x7)
-#define DPU_NR		(0x8)
 
 /* Parity bit logic */
 //#define PARITY16(x) PARITY8((x) ^ ((x) >> 8))
