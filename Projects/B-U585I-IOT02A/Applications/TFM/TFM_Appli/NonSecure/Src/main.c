@@ -45,7 +45,7 @@ __asm("  .global __ARM_use_no_argv\n");
 #include "spi.h"
 #include "system.h"
 #include "error.h"
-#include "gi_msg_handler.h"
+#include "gi_cmd_handler.h"
 
 
 #include "pilot_config.h"

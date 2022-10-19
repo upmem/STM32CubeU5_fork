@@ -6,8 +6,8 @@
 
 #include <stdio.h>
 #include "error.h"
-#include "gi_msg_handler.h"
-#include "spi_gi_cmd.h"
+#include "gi_cmd_handler.h"
+#include "gi_cmd.h"
 #include "spi.h"
 
 #define MAX_SPI_MSG_SIZE	32
