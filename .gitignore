@@ -5,6 +5,7 @@ Debug
 *.o
 Binary
 output.txt
+Projects/B-U585I-IOT02A/Applications/TFM/TFM_Appli/NonSecure/Inc/commit.h
 **/EWARM/*.dep
 **/EWARM/*.ewt
 **/EWARM/**/*.out
