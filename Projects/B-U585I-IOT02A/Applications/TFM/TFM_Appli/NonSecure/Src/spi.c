@@ -5,7 +5,6 @@
  */
 
 #include "spi.h"
-#include "spi_gi_cmd.h"
 #include "stm32u5xx_hal.h"
 #include "stdio.h"
 
@@ -14,47 +13,6 @@ SPI_HandleTypeDef handle_SPI_3;
 
 #define SPI_DEBUG
 #define SPI_16BIT_TIMEOUT_MS (5) /* should be >= 2; value of 1 can result in interrupted transfers */
-
-//Configure ILink Nodes to get following ILink-Ring:
-//Master->DPU1->DPU0->DPU2->DPU3-->DPU4->DPU5->DPU7->DPU6->Master
-const uint16_t spi_gi_init_seq[] = {
-  SPI_GI_CMD_SELECT_NO_IGNORE,
-  SPI_GI_CMD_DPU1_WRITE_REG_IDENTITY,
-  SPI_GI_CMD_WRITE_REG_IGNORE,
-  SPI_GI_CMD_SELECT_NO_IGNORE,
-  SPI_GI_CMD_DPU0_WRITE_REG_IDENTITY,
-  SPI_GI_CMD_WRITE_REG_IGNORE,
-  SPI_GI_CMD_SELECT_NO_IGNORE,
-  SPI_GI_CMD_DPU2_WRITE_REG_IDENTITY,
-  SPI_GI_CMD_WRITE_REG_IGNORE,
-  SPI_GI_CMD_SELECT_NO_IGNORE,
-  SPI_GI_CMD_DPU3_WRITE_REG_IDENTITY,
-  SPI_GI_CMD_WRITE_REG_IGNORE,
-  SPI_GI_CMD_SELECT_NO_IGNORE,
-  SPI_GI_CMD_DPU4_WRITE_REG_IDENTITY,
-  SPI_GI_CMD_WRITE_REG_IGNORE,
-  SPI_GI_CMD_SELECT_NO_IGNORE,
-  SPI_GI_CMD_DPU5_WRITE_REG_IDENTITY,
-  SPI_GI_CMD_WRITE_REG_IGNORE,
-  SPI_GI_CMD_SELECT_NO_IGNORE,
-  SPI_GI_CMD_DPU7_WRITE_REG_IDENTITY,
-  SPI_GI_CMD_WRITE_REG_IGNORE,
-  SPI_GI_CMD_SELECT_NO_IGNORE,
-  SPI_GI_CMD_DPU6_WRITE_REG_IDENTITY,
-  SPI_GI_CMD_WRITE_REG_IGNORE,
-};
-
-const uint16_t spi_gi_chipid_lsb_seq[] = {
-  SPI_GI_CMD_CHIP_ID_7_0,
-  SPI_GI_CMD_NOP,
-  SPI_GI_CMD_NOP,
-};
-
-const uint16_t spi_gi_chipid_msb_seq[] = {
-  SPI_GI_CMD_CHIP_ID_15_8,
-  SPI_GI_CMD_NOP,
-  SPI_GI_CMD_NOP,
-};
 
 
 /**
@@ -209,30 +167,6 @@ void SPI_Init(void)
   MX_SPI3_Init();
 }
 
-int SPI_tx (uint16_t* tx_buf, uint16_t len) {
-  int status = PILOT_SUCCESS;
-  for (uint32_t i = 0; i < len; i++)
-  {
-    if (HAL_SPI_Transmit(&handle_SPI_1, (uint8_t *)&(tx_buf[i]), 1, SPI_16BIT_TIMEOUT_MS) != 0) {
-	status = PILOT_FAILURE;
-	break;
-    }
-  }
-  return status;
-}
-
-int SPI_rx (uint16_t* rx_buf, uint16_t len) {
-  int status = PILOT_SUCCESS;
-  for (uint32_t i = 0; i < len; i++)
-  {
-    if (HAL_SPI_Receive(&handle_SPI_1, (uint8_t *)&(rx_buf[i]), 1, SPI_16BIT_TIMEOUT_MS) != 0) {
-	status = PILOT_FAILURE;
-	break;
-    }
-  }
-  return status;
-}
-
 #ifdef SPI_DEBUG
 static void SPI_debug (uint16_t* tx_buf, uint16_t* rx_buf, uint16_t len, int mode, HAL_StatusTypeDef status) {
   uint16_t i;
@@ -323,50 +257,6 @@ pilot_error_t SPI_GI_Transmit_Receive(uint16_t* tx_buf, uint16_t* rx_buf, uint16
     err = PILOT_SUCCESS;
   }
   return err;
-}
-
-HAL_StatusTypeDef SPI_GI_Send_InitSequence(void)
-{
-  /* send init sequence, 16bit spi transfert */
-  return SPI_GI_Transmit_Receive((uint16_t*)spi_gi_init_seq, NULL,
-      COUNTOF(spi_gi_init_seq), SPI_TRANSFERT_MODE_16BIT_BLOCKING);
-}
-
-static void print_GI_word(uint16_t word)
-{
-  printf("word: 0x%04x\r\n", word);
-  printf("  result: 0x%02x\r\n", GI_RESPONSE_GET_RESULT(word));
-  printf("  result_odd_flag: 0x%01x\r\n", GI_RESPONSE_GET_ODD_FLAG(word));
-  printf("  reserved: 0x%01x\r\n", GI_RESPONSE_GET_RESERVED(word));
-  printf("  result_valid_flag: 0x%01x\r\n", GI_RESPONSE_GET_RESULT_VALID_FLAG(word));
-  printf("  previous_odd_flag: 0x%01x\r\n", GI_RESPONSE_GET_PREVIOUS_ODD_FLAG(word));
-}
-
-HAL_StatusTypeDef SPI_GI_Read_ChipID(void)
-{
-  HAL_StatusTypeDef status_spi;
-  uint16_t chip_id = 0;
-  uint16_t spi_gi_response [COUNTOF(spi_gi_chipid_lsb_seq)];
-  uint16_t rx_word_lsb, rx_word_msb;
-
-  /* Send SPI commands to get chip ID LSB */
-  status_spi = SPI_GI_Transmit_Receive((uint16_t*)spi_gi_chipid_lsb_seq, spi_gi_response,
-      COUNTOF(spi_gi_chipid_lsb_seq), SPI_TRANSFERT_MODE_BURST_BLOCKING);
-  rx_word_lsb = spi_gi_response[2]; /* 2 first words are NOP */
-  print_GI_word(rx_word_lsb);
-
-  /* Send SPI commands to get chip ID MSB */
-  status_spi = SPI_GI_Transmit_Receive((uint16_t*)spi_gi_chipid_msb_seq, spi_gi_response,
-      COUNTOF(spi_gi_chipid_msb_seq), SPI_TRANSFERT_MODE_BURST_BLOCKING);
-  rx_word_msb = spi_gi_response[2]; /* 2 first words are NOP */
-  print_GI_word(rx_word_msb);
-
-  /* build ChipID from LSB and MSB */
-  chip_id = (GI_RESPONSE_GET_RESULT(rx_word_msb) << 8) + GI_RESPONSE_GET_RESULT(rx_word_lsb);
-
-  /* check result */
-  printf ("Chip ID: 0x%04x - Expected: 0x%04x - SPI status: %d\r\n", chip_id, CHIP_ID_FPGA, status_spi);
-  return status_spi;
 }
 
 void SPI_Com_Complete(SPI_HandleTypeDef *hspi)
