@@ -10,10 +10,6 @@
 #include "gi_cmd.h"
 #include "spi.h"
 
-#define MAX_SPI_MSG_SIZE	32
-uint16_t msg_buffer [MAX_SPI_MSG_SIZE];
-
-
 void gi_init (void) {
   if (SPI_GI_Transmit_Receive((uint16_t*)gi_init_seq, NULL, sizeof (gi_init_seq)/sizeof(uint16_t), SPI_TRANSFERT_MODE_16BIT_BLOCKING) != PILOT_SUCCESS) {
       Error_Handler();
