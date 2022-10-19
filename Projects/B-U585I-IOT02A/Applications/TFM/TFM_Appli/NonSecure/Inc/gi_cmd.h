@@ -4,8 +4,8 @@
  *
  */
 
-#ifndef __SPI_GI_CMD_H__
-#define __SPI_GI_CMD_H__
+#ifndef __GI_CMD_H__
+#define __GI_CMD_H__
 
 #define CHIP_ID_FPGA 0x0515
 
