@@ -45,7 +45,7 @@ __asm("  .global __ARM_use_no_argv\n");
 #include "spi.h"
 #include "system.h"
 #include "error.h"
-#include "gi_msg_handler.h"^M
+#include "gi_msg_handler.h"
 
 
 #include "pilot_config.h"
@@ -176,11 +176,9 @@ int main(int argc, char **argv)
     TEST_PROTECTIONS_Run_SecUserMem();
   }
 
-  //SPI_test();
-  //SPI_GI_Send_InitSequence();
-  gi_DPU_init();
-  //SPI_GI_Read_ChipID();
-  gi_dump_LNKE_status();
+  gi_init();
+  gi_check_lnke_status();
+
   /* TODO uncomment it */
 #ifdef  PILOT_RTOS_SUPPORT
   RTOS_Init();
