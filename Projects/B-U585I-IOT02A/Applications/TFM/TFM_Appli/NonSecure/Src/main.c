@@ -176,8 +176,12 @@ int main(int argc, char **argv)
     TEST_PROTECTIONS_Run_SecUserMem();
   }
 
-  gi_init();
-  gi_check_lnke_status();
+  if (
+      (gi_init() != PILOT_SUCCESS) ||
+      (gi_check_lnke_status() != PILOT_SUCCESS)
+      ) {
+      Error_Handler();
+  }
 
   /* TODO uncomment it */
 #ifdef  PILOT_RTOS_SUPPORT

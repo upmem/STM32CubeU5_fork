@@ -10,8 +10,9 @@
 
 SPI_HandleTypeDef handle_SPI_1;
 SPI_HandleTypeDef handle_SPI_3;
-
+#ifdef DEBUG
 #define SPI_DEBUG
+#endif
 #define SPI_16BIT_TIMEOUT_MS (5) /* should be >= 2; value of 1 can result in interrupted transfers */
 
 
@@ -167,8 +168,8 @@ void SPI_Init(void)
   MX_SPI3_Init();
 }
 
-#ifdef SPI_DEBUG
 static void SPI_debug (uint16_t* tx_buf, uint16_t* rx_buf, uint16_t len, int mode, HAL_StatusTypeDef status) {
+#ifdef SPI_DEBUG
   uint16_t i;
   printf ("SPI Debug:\r\n");
   printf ("  mode: %d\r\n",mode);
@@ -187,9 +188,8 @@ static void SPI_debug (uint16_t* tx_buf, uint16_t* rx_buf, uint16_t len, int mod
       printf ("0x%04x ",rx_buf[i]);
     printf ("\r\n");
   }
-
-}
 #endif
+}
 /**
   * @brief  Transmit and Receive data to Global Interface using SPI
   * @param  tx_buf: pointer to transmission data buffer, can be NULL if receive only
@@ -249,9 +249,7 @@ pilot_error_t SPI_GI_Transmit_Receive(uint16_t* tx_buf, uint16_t* rx_buf, uint16
       break;
   }
 
-#ifdef SPI_DEBUG
   SPI_debug (tx_buf, rx_buf, len, mode, status);
-#endif
 
   if (status == HAL_OK) {
     err = PILOT_SUCCESS;

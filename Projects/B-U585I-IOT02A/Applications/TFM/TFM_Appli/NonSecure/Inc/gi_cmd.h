@@ -48,7 +48,6 @@
 #define GI_RESPONSE_GET_RESERVED(x)          ((x & 0x0200) >> 9)
 #define GI_RESPONSE_GET_ODD_FLAG(x)          ((x & 0x0100) >> 8)
 #define GI_RESPONSE_GET_RESULT(x)            ((x & 0x00FF) >> 0)
-
 /* Words type */
 #define WORD_CMD_1	(0b0001 << 12)
 #define WORD_CMD_3	(0b0011 << 12)
@@ -71,6 +70,7 @@
 #define DPU_ID_5	(0x5)
 #define DPU_ID_6	(0x6)
 #define DPU_ID_7	(0x7)
+#define DPU_NR		(0x8)
 
 /* Parity bit logic */
 //#define PARITY16(x) PARITY8((x) ^ ((x) >> 8))
@@ -95,13 +95,17 @@
 #define CMD_GET_1RESULT_SPINE_TEMP	(SET_AB(WORD_CMD_1 | 0x5))
 
 /*CMD SELECT */
+#define CMD_SELECT_MODE_NONE		(0x0 << 9)
 #define CMD_SELECT_MODE_FIRST		(0x4 << 9)
 #define CMD_SELECT_MODE_ID		(0x5 << 9)
 #define CMD_SELECT_MODE_ALL		(0x6 << 9)
 #define CMD_SELECT_MODE_LNKE		(0x7 << 9)
 
+#define CMD_SELECT_NONE 		(SET_AB(WORD_CMD_3 | CMD_SELECT_MODE_NONE))
 #define CMD_SELECT_FIRST 		(SET_AB(WORD_CMD_3 | CMD_SELECT_MODE_FIRST))
 #define CMD_SELECT_ID(dpu_id)		(SET_AB(WORD_CMD_3 | CMD_SELECT_MODE_ID, | dpu_id))
+#define CMD_SELECT_LNKE 		(SET_AB(WORD_CMD_3 | CMD_SELECT_MODE_LNKE))
+
 
 /* CMD WRITE_REG */
 #define CMD_WRITE_REG_ADDR_NODE_ID	(0x0 << 8)
@@ -110,28 +114,121 @@
 #define CMD_WRITE_REG_SET_ID(dpu_id)	(SET_MSB_PARITY(WORD_CMD_C | CMD_WRITE_REG_ADDR_NODE_ID | dpu_id))
 #define CMD_WRITE_REG_UNSELECT_FIRST	(SET_MSB_PARITY(WORD_CMD_C | CMD_WRITE_REG_ADDR_IGNORE | 0x1))
 
+/* CMD WRITE_REG_A */
+#define CMD_WRITE_REG_ADDR_SPI_RECOVERY	(0x0 << 8)
+#define SPI_RECOVERY_516		(0)
+#define SPI_RECOVERY_260		(1)
+#define SPI_RECOVERY_132		(2)
+#define SPI_RECOVERY_4			(3)
+
+
+#define CMD_WRITE_REG_A_SPI_RECOVERY(x)			(SET_MSB_PARITY(WORD_CMD_C | CMD_WRITE_REG_ADDR_SPI_RECOVERY | (x & 0x3)))
+
 /* CMD NOP */
 #define CMD_NOP				(WORD_CMD_E)
 
-const uint16_t gi_init_seq[] = {
-  CMD_SELECT_FIRST, CMD_WRITE_REG_SET_ID(DPU_ID_0), CMD_WRITE_REG_UNSELECT_FIRST,
-  CMD_SELECT_FIRST, CMD_WRITE_REG_SET_ID(DPU_ID_1), CMD_WRITE_REG_UNSELECT_FIRST,
-  CMD_SELECT_FIRST, CMD_WRITE_REG_SET_ID(DPU_ID_2), CMD_WRITE_REG_UNSELECT_FIRST,
-  CMD_SELECT_FIRST, CMD_WRITE_REG_SET_ID(DPU_ID_3), CMD_WRITE_REG_UNSELECT_FIRST,
-  CMD_SELECT_FIRST, CMD_WRITE_REG_SET_ID(DPU_ID_4), CMD_WRITE_REG_UNSELECT_FIRST,
-  CMD_SELECT_FIRST, CMD_WRITE_REG_SET_ID(DPU_ID_5), CMD_WRITE_REG_UNSELECT_FIRST,
-  CMD_SELECT_FIRST, CMD_WRITE_REG_SET_ID(DPU_ID_6), CMD_WRITE_REG_UNSELECT_FIRST,
-  CMD_SELECT_FIRST, CMD_WRITE_REG_SET_ID(DPU_ID_7), CMD_WRITE_REG_UNSELECT_FIRST
+/* CMD RESUME*/
+#define RESUME			(WORD_CMD_E)
+#define BUBBLE			(0)
+
+/* -------------------
+ * Unsecure Sequences
+ * -------------------
+ */
+
+/* Ilink needd to close a cluster (word-signatue, word-signature) in order to process a reading request,
+ * if two reading are in the same claster the second would overwrite the first result
+ * Use NOP to close clusters and overcome the ILink reading contraint, use BUBBLE to handle SPI latency */
+
+/* NR of BUBBLEs needed to overcome the PSI latency  */
+#define SPI_DRAIN_BUBBLE_NR	(1)
+
+
+/*
+ * DPU shall be numbered in a specific older (1,0,2,3,4,5,7,6)
+ * due to Local Interface constraints
+*/
+#define GI_DPU_INIT_SEQ_WORD_NR	(5)
+const uint16_t gi_init_seq[DPU_NR][GI_DPU_INIT_SEQ_WORD_NR] = {
+    /* In case of issues a resume command must be sent,
+     * The init sequence is split in blocks to allow to resend
+     * single block in case of issues
+     */
+      {CMD_SELECT_FIRST, CMD_WRITE_REG_SET_ID(DPU_ID_1),
+      CMD_WRITE_REG_UNSELECT_FIRST, CMD_NOP,
+      BUBBLE
+      },
+      {CMD_SELECT_FIRST, CMD_WRITE_REG_SET_ID(DPU_ID_0),
+      CMD_WRITE_REG_UNSELECT_FIRST, CMD_NOP,
+      BUBBLE
+      },
+      {CMD_SELECT_FIRST, CMD_WRITE_REG_SET_ID(DPU_ID_2),
+      CMD_WRITE_REG_UNSELECT_FIRST, CMD_NOP,
+      BUBBLE
+      },
+      {CMD_SELECT_FIRST, CMD_WRITE_REG_SET_ID(DPU_ID_3),
+      CMD_WRITE_REG_UNSELECT_FIRST, CMD_NOP,
+      BUBBLE
+      },
+      {CMD_SELECT_FIRST, CMD_WRITE_REG_SET_ID(DPU_ID_4),
+      CMD_WRITE_REG_UNSELECT_FIRST, CMD_NOP,
+      BUBBLE
+      },
+      {CMD_SELECT_FIRST, CMD_WRITE_REG_SET_ID(DPU_ID_5),
+      CMD_WRITE_REG_UNSELECT_FIRST, CMD_NOP,
+      BUBBLE
+      },
+      {CMD_SELECT_FIRST, CMD_WRITE_REG_SET_ID(DPU_ID_7),
+      CMD_WRITE_REG_UNSELECT_FIRST, CMD_NOP,
+      BUBBLE
+      },
+      {CMD_SELECT_FIRST, CMD_WRITE_REG_SET_ID(DPU_ID_6),
+      CMD_WRITE_REG_UNSELECT_FIRST, CMD_NOP,
+      BUBBLE
+      }
 };
 
-const uint16_t spi_gi_lnke_status[] = {
-    CMD_GET_1RESULT_CHIP_ID_LSB, CMD_NOP, CMD_NOP,
-    CMD_GET_1RESULT_CHIP_ID_MSB, CMD_NOP, CMD_NOP,
-    CMD_GET_1RESULT_PLL_LOCK, CMD_NOP, CMD_NOP,
-//    CMD_GET_1RESULT_CHECK_RES, CMD_NOP, CMD_NOP,
-//    CMD_GET_1RESULT_TEMP_DEFECT, CMD_NOP, CMD_NOP,
-//    CMD_GET_1RESULT_SPINE_TEMP, CMD_NOP, CMD_NOP,
+const uint16_t gi_set_spi_recovery[] = {
+    CMD_SELECT_LNKE, CMD_WRITE_REG_A_SPI_RECOVERY(SPI_RECOVERY_132),
+    CMD_SELECT_NONE, CMD_NOP,
+    BUBBLE
+    /* we should not check the response for the bubbles */
+};
+//const uint16_t spi_gi_lnke_status[] = {
+uint16_t spi_gi_lnke_status[] = {
+    CMD_GET_1RESULT_CHIP_ID_LSB, CMD_NOP,
+    CMD_GET_1RESULT_CHIP_ID_MSB, CMD_NOP,
+    CMD_GET_1RESULT_PLL_LOCK, CMD_NOP,
+//    CMD_GET_1RESULT_CHIP_ID_LSB, CMD_NOP,
+//    CMD_GET_1RESULT_CHIP_ID_MSB, CMD_NOP,
+//    CMD_GET_1RESULT_CHECK_RES, CMD_NOP,
+//    CMD_GET_1RESULT_TEMP_DEFECT, CMD_NOP,
+//    CMD_GET_1RESULT_SPINE_TEMP, CMD_NOP,
+    BUBBLE
+    /* we should not check the response for the bubbles */
 };
 
+const uint16_t bubble_seq[] = {
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+};
+
+const uint16_t resume_seq[] = {
+    BUBBLE, BUBBLE, BUBBLE, RESUME, BUBBLE
+};
 
 #endif /* __SPI_GI_CMD_H__ */

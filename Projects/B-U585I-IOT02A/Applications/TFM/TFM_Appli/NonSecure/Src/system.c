@@ -4,9 +4,9 @@
  *
  */
 
-#include "stm32u5xx_hal.h"
 #include "system.h"
-#include "error.h"
+#include "bitops.h"
+
 /**
   * @brief System Clock Configuration
   * @retval None
@@ -80,4 +80,16 @@ void SystemPower_Config(void)
   }
 #endif
 
+}
+
+pilot_error_t check_timeout (uint32_t timestamp, uint32_t timeout) {
+  pilot_error_t ret = PILOT_SUCCESS;
+  if (timeout != HAL_MAX_DELAY)
+  {
+    if ((HAL_GetTick() - timestamp) < timeout)
+    {
+      ret = PILOT_FAILURE;
+    }
+  }
+  return ret;
 }
