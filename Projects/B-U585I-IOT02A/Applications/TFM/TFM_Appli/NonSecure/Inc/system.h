@@ -7,6 +7,10 @@
 #ifndef __SYSTEM_H__
 #define __SYSTEM_H__
 
+#include "stm32u5xx_hal.h"
+#include "error.h"
+
+
 #ifdef SYSCLK_160MHZ
 #define PWR_REGULATOR_VOLTAGE_SCALE	(PWR_REGULATOR_VOLTAGE_SCALE1)
 #define OSC_INIT_OSCILLATORTYPE		(RCC_OSCILLATORTYPE_HSI48|RCC_OSCILLATORTYPE_MSI)
@@ -72,5 +76,8 @@
 
 void SystemClock_Config(void);
 void SystemPower_Config(void);
-
+pilot_error_t check_timeout (uint32_t timestamp, uint32_t timeout);
+inline uint32_t get_timestamp(void){
+  return HAL_GetTick();
+}
 #endif

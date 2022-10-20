@@ -7,6 +7,6 @@
 #ifndef __GI_CMD_HANDLER_H__
 #define __GI_CMD_HANDLER_H__
 
-void gi_init (void);
-void gi_check_lnke_status (void);
+pilot_error_t gi_init (void);
+pilot_error_t gi_check_lnke_status (void);
 #endif
