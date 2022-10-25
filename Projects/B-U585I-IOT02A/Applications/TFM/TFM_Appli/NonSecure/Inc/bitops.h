@@ -7,11 +7,7 @@
 #ifndef __BITOPS_H__
 #define __BITOPS_H__
 
-inline int popcount (int x) {
-  return __builtin_popcount(x);
-}
+#define popcount __builtin_popcount
+#define odd_parity __builtin_parity
 
-inline int odd_parity (int x) {
-  return __builtin_parity(x);
-}
 #endif
