@@ -182,7 +182,7 @@ int main(int argc, char **argv)
       ) {
       Error_Handler();
   }
-
+  printf ("Non-secure image init all good\r\n");
   /* TODO uncomment it */
 #ifdef  PILOT_RTOS_SUPPORT
   RTOS_Init();

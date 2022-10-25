@@ -7,28 +7,20 @@
 #ifndef __GI_CMD_H__
 #define __GI_CMD_H__
 
-#define CHIP_ID_FPGA 0x0515
+#include "bitops.h"
 
-/* CMD for debug */
-#define SPI_GI_CMD_SELECT_NO_IGNORE 0x3800
-#define SPI_GI_CMD_WRITE_REG_IGNORE 0xC301
-
-#define SPI_GI_CMD_DPU0_WRITE_REG_IDENTITY 0xD000
-#define SPI_GI_CMD_DPU1_WRITE_REG_IDENTITY 0xC001
-#define SPI_GI_CMD_DPU2_WRITE_REG_IDENTITY 0xC002
-#define SPI_GI_CMD_DPU3_WRITE_REG_IDENTITY 0xD003
-#define SPI_GI_CMD_DPU4_WRITE_REG_IDENTITY 0xC004
-#define SPI_GI_CMD_DPU5_WRITE_REG_IDENTITY 0xD005
-#define SPI_GI_CMD_DPU6_WRITE_REG_IDENTITY 0xD006
-#define SPI_GI_CMD_DPU7_WRITE_REG_IDENTITY 0xC007
-
-#define SPI_GI_CMD_CHIP_ID_15_8 0x1101
-#define SPI_GI_CMD_CHIP_ID_7_0 0x1300
-#define SPI_GI_CMD_BUBBLE 0x0000
-#define SPI_GI_CMD_NOP 0xE000
-
+#ifdef DEBUG
 /*
- * When PILOT transmits a 16-bits word on MOSI line through SPI interface,
+ * This define as well as the related code must be deleted
+ * There is a bug in the GI, this define will be used to verify the fix
+*/
+//#define GI_ERROR
+#endif
+
+/* -------------------
+ * Answer definition
+ * -------------------
+ * when PILOT transmits a 16-bits word on MOSI line through SPI interface,
  * the DPU-DRAM transmits at the same time a 16-bits answer on MISO line
  * whom the bitfield is described as follows:
  *
@@ -48,6 +40,11 @@
 #define GI_RESPONSE_GET_RESERVED(x)          ((x & 0x0200) >> 9)
 #define GI_RESPONSE_GET_ODD_FLAG(x)          ((x & 0x0100) >> 8)
 #define GI_RESPONSE_GET_RESULT(x)            ((x & 0x00FF) >> 0)
+
+/* -------------------
+ * Words definition
+ * -------------------
+*/
 /* Words type */
 #define WORD_CMD_1	(0b0001 << 12)
 #define WORD_CMD_3	(0b0011 << 12)
@@ -73,16 +70,11 @@
 #define DPU_NR		(0x8)
 
 /* Parity bit logic */
-//#define PARITY16(x) PARITY8((x) ^ ((x) >> 8))
-//#define PARITY8(x)  PARITY4((x) ^ ((x) >> 4))
-//#define PARITY4(x)  PARITY2((x) ^ ((x) >> 2))
-//#define PARITY2(x)  (((x) ^ ((x) >> 1)) & 1)
-//#define EVEN_PARITY(word)              (~(PARITY16(word))& 1)
-#define EVEN_PARITY(word)		(~(__builtin_parity(word)) & 1)
+#define EVEN_PARITY(word)		(~(odd_parity(word)) & 1)
 
-#define AB_BITS_DELTA(word)		((__builtin_popcount(word) < 3 ) ? (word | (((1 << (3 - __builtin_popcount(word))) -1) << 8)) : word )
+#define AB_BITS_DELTA(word)		((popcount(word) < 3 ) ? (word | (((1 << (3 - popcount(word))) -1) << 8)) : word )
 #define AB_PARITY(word)			((word & (1 << 8)) ? (word | EVEN_PARITY(word) << 9) : (word | EVEN_PARITY(word) << 8))
-/* Not correct, to rework*/
+
 #define SET_AB(word)			(AB_PARITY(AB_BITS_DELTA(word)))
 #define SET_MSB_PARITY(word)		(word |  EVEN_PARITY(word) << 12)
 
@@ -134,15 +126,13 @@
 /* -------------------
  * Unsecure Sequences
  * -------------------
- */
+*/
 
-/* Ilink needd to close a cluster (word-signatue, word-signature) in order to process a reading request,
- * if two reading are in the same claster the second would overwrite the first result
- * Use NOP to close clusters and overcome the ILink reading contraint, use BUBBLE to handle SPI latency */
-
-/* NR of BUBBLEs needed to overcome the PSI latency  */
+/*
+ * NR of BUBBLEs needed to overcome the PSI latency
+ * we should not check the response for the BUBBLE
+*/
 #define SPI_DRAIN_BUBBLE_NR	(1)
-
 
 /*
  * DPU shall be numbered in a specific older (1,0,2,3,4,5,7,6)
@@ -150,7 +140,8 @@
 */
 #define GI_DPU_INIT_SEQ_WORD_NR	(5)
 const uint16_t gi_init_seq[DPU_NR][GI_DPU_INIT_SEQ_WORD_NR] = {
-    /* In case of issues a resume command must be sent,
+    /*
+     * In case of issues a resume command must be sent,
      * The init sequence is split in blocks to allow to resend
      * single block in case of issues
      */
@@ -192,10 +183,19 @@ const uint16_t gi_set_spi_recovery[] = {
     CMD_SELECT_LNKE, CMD_WRITE_REG_A_SPI_RECOVERY(SPI_RECOVERY_132),
     CMD_SELECT_NONE, CMD_NOP,
     BUBBLE
-    /* we should not check the response for the bubbles */
 };
-//const uint16_t spi_gi_lnke_status[] = {
+
+/*
+* Ilink needs to close a cluster (word-signatue, word-signature) in order to process a reading request,
+* if two reading are in the same claster the second would overwrite the first result.
+* Build un-secure sequence with the same logic in order to make it as much as possible
+* portable to secure scenario (signatures are anyway missed)
+*/
+#ifdef GI_ERROR
 uint16_t spi_gi_lnke_status[] = {
+#else
+const uint16_t spi_gi_lnke_status[] = {
+#endif
     CMD_GET_1RESULT_CHIP_ID_LSB, CMD_NOP,
     CMD_GET_1RESULT_CHIP_ID_MSB, CMD_NOP,
     CMD_GET_1RESULT_PLL_LOCK, CMD_NOP,
@@ -208,7 +208,57 @@ uint16_t spi_gi_lnke_status[] = {
     /* we should not check the response for the bubbles */
 };
 
+
+/* Due to RECOVERY CTRL setting we need 512 BUBBLEs at max */
 const uint16_t bubble_seq[] = {
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
     BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
     BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
     BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
@@ -231,4 +281,4 @@ const uint16_t resume_seq[] = {
     BUBBLE, BUBBLE, BUBBLE, RESUME, BUBBLE
 };
 
-#endif /* __SPI_GI_CMD_H__ */
+#endif /* __GI_CMD_H__ */

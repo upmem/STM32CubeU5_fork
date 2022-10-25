@@ -8,11 +8,11 @@
 #include "dma.h"
 #include "stm32u5xx_hal.h"
 #include "error.h"
-#include "spi.h"
 
 DMA_HandleTypeDef handle_GPDMA1_Channel7;
 DMA_HandleTypeDef handle_GPDMA1_Channel6;
-
+/* This dependency should be removed */
+extern SPI_HandleTypeDef handle_SPI_1;
 /**
   * @brief GPDMA1 Initialization Function
   * @param None

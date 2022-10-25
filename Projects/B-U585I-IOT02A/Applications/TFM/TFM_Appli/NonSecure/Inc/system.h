@@ -77,7 +77,7 @@
 void SystemClock_Config(void);
 void SystemPower_Config(void);
 pilot_error_t check_timeout (uint32_t timestamp, uint32_t timeout);
-inline uint32_t get_timestamp(void){
+static inline uint32_t get_timestamp(void){
   return HAL_GetTick();
 }
 #endif
