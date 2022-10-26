@@ -23,7 +23,6 @@
 #include "stm32u5xx.h"
 #include "error.h"
 #include "string.h"
-#include "dma.h"
 
 /* USER CODE BEGIN Includes */
 
