@@ -5,7 +5,6 @@
  */
 
 #include "system.h"
-#include "bitops.h"
 
 /**
   * @brief System Clock Configuration
