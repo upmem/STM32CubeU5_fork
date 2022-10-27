@@ -11,7 +11,7 @@
 
 #ifdef DEBUG
 /*
- * This define as well as the related code must be deleted
+ * TODO This define as well as the related code must be deleted
  * There is a bug in the GI, this define will be used to verify the fix
 */
 //#define GI_ERROR
@@ -46,17 +46,17 @@
  * -------------------
 */
 /* Words type */
-#define WORD_CMD_1	(0b0001 << 12)
-#define WORD_CMD_3	(0b0011 << 12)
-#define WORD_CMD_6	(0b0110 << 12)
-#define WORD_CMD_7	(0b0111 << 12)
-#define WORD_CMD_C	(0b1100 << 12)
-#define WORD_CMD_E	(0b1110 << 12)
+#define WORD_CMD_1	(0x1 << 12)
+#define WORD_CMD_3	(0x3 << 12)
+#define WORD_CMD_6	(0x6 << 12)
+#define WORD_CMD_7	(0x7 << 12)
+#define WORD_CMD_C	(0xC << 12)
+#define WORD_CMD_E	(0xE << 12)
 
-#define WORD_ESC_5	(0b0101 << 12)
-#define WORD_ESC_8	(0b1000 << 12)
+#define WORD_ESC_5	(0x5 << 12)
+#define WORD_ESC_8	(0x8 << 12)
 
-#define WORD_INSTR	(0b1010 << 12)
+#define WORD_INSTR	(0xA << 12)
 
 /* Slave node indexes (AKA DPU IDs) */
 #define DPU_ID_0	(0x0)
@@ -129,7 +129,7 @@
 */
 
 /*
- * NR of BUBBLEs needed to overcome the PSI latency
+ * NR of BUBBLEs needed to overcome the SPI latency
  * we should not check the response for the BUBBLE
 */
 #define SPI_DRAIN_BUBBLE_NR	(1)
