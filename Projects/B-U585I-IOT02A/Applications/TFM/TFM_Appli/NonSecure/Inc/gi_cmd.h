@@ -122,7 +122,8 @@
 #define SPI_RECOVERY_4			(3)
 
 
-#define CMD_WRITE_REG_A_SPI_RECOVERY(x)			(SET_MSB_PARITY(WORD_CMD_C | CMD_WRITE_REG_ADDR_SPI_RECOVERY | (x & 0x3)))
+#define CMD_WRITE_REG_A_SPI_RECOVERY(x)	(SET_MSB_PARITY(WORD_CMD_C | CMD_WRITE_REG_ADDR_SPI_RECOVERY | (x & 0x3)))
+
 
 /* CMD NOP */
 #define CMD_NOP				(WORD_CMD_E)
@@ -162,8 +163,8 @@ const uint16_t gi_init_seq[] = {
     BUBBLE
 };
 
-const uint16_t gi_set_spi_recovery[] = {
-    CMD_SELECT_LNKE, CMD_WRITE_REG_A_SPI_RECOVERY(SPI_RECOVERY_132),
+uint16_t gi_set_spi_recovery_seq[] = {
+    CMD_SELECT_LNKE, CMD_WRITE_REG_A_SPI_RECOVERY(SPI_RECOVERY_516),
     CMD_SELECT_NONE, CMD_NOP,
     BUBBLE
 };
@@ -175,9 +176,9 @@ const uint16_t gi_set_spi_recovery[] = {
 * portable to secure scenario (signatures are anyway missed)
 */
 #ifdef GI_ERROR
-uint16_t spi_gi_lnke_status[] = {
+uint16_t spi_gi_lnke_status_seq[] = {
 #else
-const uint16_t spi_gi_lnke_status[] = {
+const uint16_t spi_gi_lnke_status_seq[] = {
 #endif
     CMD_GET_1RESULT_CHIP_ID_LSB, CMD_NOP,
     CMD_GET_1RESULT_CHIP_ID_MSB, CMD_NOP,
@@ -192,7 +193,7 @@ const uint16_t spi_gi_lnke_status[] = {
 };
 
 
-/* Due to RECOVERY CTRL setting we need 512 BUBBLEs at max */
+/* Due to RECOVERY CTRL setting we need 4 + 512 BUBBLEs at max */
 const uint16_t bubble_seq[] = {
     BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
     BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
@@ -258,10 +259,11 @@ const uint16_t bubble_seq[] = {
     BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
     BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
     BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE
 };
 
 const uint16_t resume_seq[] = {
-    BUBBLE, BUBBLE, BUBBLE, RESUME, BUBBLE
+    RESUME, BUBBLE
 };
 
 #endif /* __GI_CMD_H__ */
