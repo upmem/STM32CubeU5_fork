@@ -17,9 +17,9 @@
 #endif
 #ifdef GI_DEBUG
 /* DEBUG enable printf, let's increase the timeout */
-#define GI_TIMEOUT	(1000U) /* 1 sec */
+#define GI_TIMEOUT	(TIME_MS(1000U)) /* 1 sec */
 #else
-#define GI_TIMEOUT	(10U) /* 10 ms */
+#define GI_TIMEOUT	(TIME_MS(10U)) /* 10 ms */
 #endif
 
 /*
@@ -30,7 +30,10 @@
 #define  CHIPID_LSB_ANSW_POS     (2-1)
 #define  PLL_LOCK_ANSW_POS       (6-1)
 #define  BUBBLE_NR_128	     (128)
+
 #define  CHIP_ID_FPGA        (0x0515)
+#define COUNTOF(array) (sizeof(array)/sizeof(array[0]))
+
 
 uint16_t gi_tmp_buffer[512];
 
@@ -71,9 +74,9 @@ static void gi_resume (uint32_t bubble_nr) {
   /* Send recovery frame */
   if (
       (SPI_GI_Transmit_Receive((uint16_t *)bubble_seq, gi_tmp_buffer, bubble_nr, SPI_TRANSFERT_MODE_BURST_BLOCKING) != PILOT_SUCCESS) ||
-      (SPI_GI_Transmit_Receive((uint16_t *)resume_seq, gi_tmp_buffer, sizeof (resume_seq)/sizeof(uint16_t), SPI_TRANSFERT_MODE_BURST_BLOCKING) != PILOT_SUCCESS) ||
+      (SPI_GI_Transmit_Receive((uint16_t *)resume_seq, gi_tmp_buffer, COUNTOF(resume_seq), SPI_TRANSFERT_MODE_BURST_BLOCKING) != PILOT_SUCCESS) ||
       /* Only the last answer word is of interest, we don't need to check BUBBLE responses */
-      (check_answer(&gi_tmp_buffer[sizeof (resume_seq)/sizeof(uint16_t) - 1], 1, NULL) != PILOT_SUCCESS)
+      (check_answer(&gi_tmp_buffer[COUNTOF(resume_seq) - 1], 1, NULL) != PILOT_SUCCESS)
   ){
       Error_Handler();
   }
@@ -112,7 +115,7 @@ static pilot_error_t GI_transfer(uint16_t* seq, uint16_t* answ, uint16_t word_nr
     }
 
     /* Copy to the answer buffer the valid response only */
-    memcpy(answ, &gi_tmp_buffer[SPI_DRAIN_BUBBLE_NR], valid_nr  * sizeof(uint16_t));
+    memcpy(answ, &gi_tmp_buffer[SPI_DRAIN_BUBBLE_NR], valid_nr * sizeof(uint16_t));
     /* If needed resend part of the sequence */
     answ += valid_nr;
     seq +=valid_nr;
@@ -130,14 +133,14 @@ pilot_error_t gi_init (void) {
   pilot_error_t ret = PILOT_FAILURE;
   do {
     /* Configure the SPI recovery CNTR to 4 + 128 words */
-    if (GI_transfer((uint16_t *)gi_set_spi_recovery, answ, sizeof (gi_set_spi_recovery)/sizeof(uint16_t)) == PILOT_FAILURE){
+    if (GI_transfer((uint16_t *)gi_set_spi_recovery, answ, COUNTOF(gi_set_spi_recovery)) == PILOT_FAILURE){
 	break;
     }
 
     /* Split the DPU init in multiple sequence so that we are able to recover in case of issues */
     for (uint8_t i = 0; i < DPU_NR; i++)
     {
-	ret = GI_transfer((uint16_t *)&gi_init_seq[i], answ, sizeof (gi_init_seq[i])/sizeof(uint16_t));
+	ret = GI_transfer((uint16_t *)&gi_init_seq[i], answ, COUNTOF(gi_init_seq[i]));
 	if (ret == PILOT_FAILURE) {
 	    break;
 	}
@@ -155,7 +158,7 @@ pilot_error_t gi_init (void) {
 
 
 pilot_error_t gi_check_lnke_status (void) {
-  uint16_t answ[sizeof(spi_gi_lnke_status)/sizeof(uint16_t) - SPI_DRAIN_BUBBLE_NR]; /* NOP doesn't have responses */
+  uint16_t answ[COUNTOF(spi_gi_lnke_status) - SPI_DRAIN_BUBBLE_NR]; /* NOP doesn't have responses */
   uint16_t chip_id = 0;
   uint16_t pll_lock = 0;
   pilot_error_t ret = PILOT_FAILURE;
@@ -167,7 +170,7 @@ pilot_error_t gi_check_lnke_status (void) {
       parity_toggle(&spi_gi_lnke_status[4]);
 #endif
       /* read the LNKE status registers*/
-      if ((GI_transfer((uint16_t*)spi_gi_lnke_status, answ, sizeof (spi_gi_lnke_status)/sizeof(uint16_t)) == PILOT_FAILURE) ||
+      if ((GI_transfer((uint16_t*)spi_gi_lnke_status, answ, COUNTOF(spi_gi_lnke_status)) == PILOT_FAILURE) ||
           /* Verify there are valid results in the appropriate answer words */
 	  (popcount(GI_RESPONSE_GET_RESULT_VALID_FLAG(answ[CHIPID_MSB_ANSW_POS])) < 2) ||
 	  (popcount(GI_RESPONSE_GET_RESULT_VALID_FLAG(answ[CHIPID_LSB_ANSW_POS])) < 2) ||

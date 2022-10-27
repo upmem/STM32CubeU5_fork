@@ -74,6 +74,7 @@
 #error "At least SYSCLK_160MHZ or SYSCLK_80MHZ must be defined"
 #endif
 
+#define TIME_MS(x)	(x)
 void SystemClock_Config(void);
 void SystemPower_Config(void);
 pilot_error_t check_timeout (uint32_t timestamp, uint32_t timeout);

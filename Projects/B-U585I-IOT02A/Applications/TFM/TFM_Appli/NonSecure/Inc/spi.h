@@ -20,8 +20,6 @@ pilot_error_t SPI_GI_Transmit_Receive(uint16_t* tx_buf, uint16_t* rx_buf, uint16
 #define SPI_TRANSFERT_MODE_BURST_BLOCKING  1
 #define SPI_TRANSFERT_MODE_DMA             2
 
-#define COUNTOF(array) (sizeof(array)/sizeof(array[0]))
-
 extern SPI_HandleTypeDef handle_SPI_1;
 extern SPI_HandleTypeDef handle_SPI_3;
 
