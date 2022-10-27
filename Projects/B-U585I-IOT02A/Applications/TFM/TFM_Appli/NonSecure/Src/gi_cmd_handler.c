@@ -22,9 +22,13 @@
 #define GI_TIMEOUT	(10U) /* 10 ms */
 #endif
 
-#define  CHIPID_MSB_ANSW     (4-1)
-#define  CHIPID_LSB_ANSW     (2-1)
-#define  PLL_LOCK_ANSW       (6-1)
+/*
+ * The first answer word, related to the previous SPI sequence,
+ * is not copied in the response buffer
+*/
+#define  CHIPID_MSB_ANSW_POS     (4-1)
+#define  CHIPID_LSB_ANSW_POS     (2-1)
+#define  PLL_LOCK_ANSW_POS       (6-1)
 #define  BUBBLE_NR_128	     (128)
 #define  CHIP_ID_FPGA        (0x0515)
 
@@ -165,19 +169,19 @@ pilot_error_t gi_check_lnke_status (void) {
       /* read the LNKE status registers*/
       if ((GI_transfer((uint16_t*)spi_gi_lnke_status, answ, sizeof (spi_gi_lnke_status)/sizeof(uint16_t)) == PILOT_FAILURE) ||
           /* Verify there are valid results in the appropriate answer words */
-	  (popcount(GI_RESPONSE_GET_RESULT_VALID_FLAG(answ[CHIPID_MSB_ANSW])) < 2) ||
-	  (popcount(GI_RESPONSE_GET_RESULT_VALID_FLAG(answ[CHIPID_LSB_ANSW])) < 2) ||
-	  (popcount(GI_RESPONSE_GET_RESULT_VALID_FLAG(answ[PLL_LOCK_ANSW])) < 2)
+	  (popcount(GI_RESPONSE_GET_RESULT_VALID_FLAG(answ[CHIPID_MSB_ANSW_POS])) < 2) ||
+	  (popcount(GI_RESPONSE_GET_RESULT_VALID_FLAG(answ[CHIPID_LSB_ANSW_POS])) < 2) ||
+	  (popcount(GI_RESPONSE_GET_RESULT_VALID_FLAG(answ[PLL_LOCK_ANSW_POS])) < 2)
          ){
 	  break;
       }
-      chip_id = (GI_RESPONSE_GET_RESULT(answ[CHIPID_MSB_ANSW]) << 8) | GI_RESPONSE_GET_RESULT(answ[CHIPID_LSB_ANSW]);
-      pll_lock = GI_RESPONSE_GET_RESULT(answ[PLL_LOCK_ANSW]);
+      chip_id = (GI_RESPONSE_GET_RESULT(answ[CHIPID_MSB_ANSW_POS]) << 8) | GI_RESPONSE_GET_RESULT(answ[CHIPID_LSB_ANSW_POS]);
+      pll_lock = GI_RESPONSE_GET_RESULT(answ[PLL_LOCK_ANSW_POS]);
 
       if ((chip_id != CHIP_ID_FPGA) || (pll_lock != 0x1)) {
-	  print_gi_word(answ[CHIPID_MSB_ANSW]);
-	  print_gi_word(answ[CHIPID_LSB_ANSW]);
-	  print_gi_word(answ[PLL_LOCK_ANSW]);
+	  print_gi_word(answ[CHIPID_MSB_ANSW_POS]);
+	  print_gi_word(answ[CHIPID_LSB_ANSW_POS]);
+	  print_gi_word(answ[PLL_LOCK_ANSW_POS]);
 	  printf ("LNKE status issue: chipid=0x%x, pll_lock=0x%x\r\n", chip_id, pll_lock);
 	  break;
       }
