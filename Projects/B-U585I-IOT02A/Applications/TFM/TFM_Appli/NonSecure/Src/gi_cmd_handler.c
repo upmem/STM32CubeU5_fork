@@ -36,6 +36,7 @@
 
 
 uint16_t gi_tmp_buffer[512];
+uint16_t spi_recovery_ignored_words_nr = 516;
 
 static void print_gi_word(uint16_t word)
 {
@@ -70,10 +71,10 @@ static pilot_error_t check_answer(uint16_t *answ, uint32_t word_nr, uint32_t *va
   return ret;
 }
 
-static void gi_resume (uint32_t bubble_nr) {
+static void gi_resume () {
   /* Send recovery frame */
   if (
-      (SPI_GI_Transmit_Receive((uint16_t *)bubble_seq, gi_tmp_buffer, bubble_nr, SPI_TRANSFERT_MODE_BURST_BLOCKING) != PILOT_SUCCESS) ||
+      (SPI_GI_Transmit_Receive((uint16_t *)bubble_seq, gi_tmp_buffer, spi_recovery_ignored_words_nr, SPI_TRANSFERT_MODE_BURST_BLOCKING) != PILOT_SUCCESS) ||
       (SPI_GI_Transmit_Receive((uint16_t *)resume_seq, gi_tmp_buffer, COUNTOF(resume_seq), SPI_TRANSFERT_MODE_BURST_BLOCKING) != PILOT_SUCCESS) ||
       /* Only the last answer word is of interest, we don't need to check BUBBLE responses */
       (check_answer(&gi_tmp_buffer[COUNTOF(resume_seq) - 1], 1, NULL) != PILOT_SUCCESS)
@@ -90,6 +91,13 @@ static void parity_toggle (uint16_t *word) {
 }
 #endif
 
+
+/*
+ * This function takes care of possible SPI transmission errors
+ * Only valid answers are copied to the answ buffer:
+ * - Answer words related to transmission errors are not copied to the answ buffer
+ * - The first answer word, related to the previous sequence, is not copied to the answ buffer
+*/
 static pilot_error_t GI_transfer(uint16_t* seq, uint16_t* answ, uint16_t word_nr) {
   pilot_error_t ret = PILOT_FAILURE;
   uint32_t valid_nr = 0;
@@ -98,7 +106,7 @@ static pilot_error_t GI_transfer(uint16_t* seq, uint16_t* answ, uint16_t word_nr
   do {
     if (error) {
 	/* Send BUBBLEs in accordance to RECOVERY CTRL register */
-	gi_resume(BUBBLE_NR_128);
+	gi_resume();
 	error = 0;
 #ifdef GI_ERROR
 	parity_toggle(seq);
@@ -114,7 +122,7 @@ static pilot_error_t GI_transfer(uint16_t* seq, uint16_t* answ, uint16_t word_nr
 	error = 1;
     }
 
-    /* Copy to the answer buffer the valid response only */
+    /* Copy to the answer buffer the valid response only, the first answer word is ignored */
     memcpy(answ, &gi_tmp_buffer[SPI_DRAIN_BUBBLE_NR], valid_nr * sizeof(uint16_t));
     /* If needed resend part of the sequence */
     answ += valid_nr;
@@ -128,12 +136,49 @@ static pilot_error_t GI_transfer(uint16_t* seq, uint16_t* answ, uint16_t word_nr
   return ret;
 }
 
+
+static pilot_error_t gi_set_spi_recovery (uint8_t conf) {
+  uint16_t answ[sizeof(gi_set_spi_recovery_seq)/sizeof(uint16_t)];
+  pilot_error_t ret = PILOT_FAILURE;
+  uint16_t ignored_words_nr;
+
+  switch (conf) {
+    case(SPI_RECOVERY_4):
+	gi_set_spi_recovery_seq[1] = CMD_WRITE_REG_A_SPI_RECOVERY(SPI_RECOVERY_4);
+	ignored_words_nr = 4;
+	break;
+    case(SPI_RECOVERY_132):
+	gi_set_spi_recovery_seq[1] = CMD_WRITE_REG_A_SPI_RECOVERY(SPI_RECOVERY_132);
+	ignored_words_nr = 132;
+	break;
+    case(SPI_RECOVERY_260):
+	gi_set_spi_recovery_seq[1] = CMD_WRITE_REG_A_SPI_RECOVERY(SPI_RECOVERY_260);
+	ignored_words_nr = 260;
+	break;
+    case(SPI_RECOVERY_516):
+	gi_set_spi_recovery_seq[1] = CMD_WRITE_REG_A_SPI_RECOVERY(SPI_RECOVERY_516);
+	ignored_words_nr = 516;
+	break;
+    default:
+	gi_set_spi_recovery_seq[1] = CMD_WRITE_REG_A_SPI_RECOVERY(SPI_RECOVERY_516);
+	ignored_words_nr = 516;
+	break;
+  }
+
+  /* Configure the SPI recovery CNTR to 4 + bubble_nr words */
+  if (GI_transfer((uint16_t *)gi_set_spi_recovery_seq, answ, sizeof (gi_set_spi_recovery_seq)/sizeof(uint16_t)) == PILOT_SUCCESS) {
+	ret = PILOT_SUCCESS;
+	spi_recovery_ignored_words_nr = ignored_words_nr;
+  }
+  return ret;
+}
+
 pilot_error_t gi_init (void) {
   uint16_t answ[COUNTOF(gi_init_seq)];
   pilot_error_t ret = PILOT_FAILURE;
   do {
     /* Configure the SPI recovery CNTR to 4 + 128 words */
-    if (GI_transfer((uint16_t *)gi_set_spi_recovery, answ, COUNTOF(gi_set_spi_recovery)) != PILOT_SUCCESS) {
+    if (gi_set_spi_recovery(SPI_RECOVERY_132) != PILOT_SUCCESS) {
 	break;
     }
 
@@ -149,19 +194,19 @@ pilot_error_t gi_init (void) {
 
 
 pilot_error_t gi_check_lnke_status (void) {
-  uint16_t answ[COUNTOF(spi_gi_lnke_status) - SPI_DRAIN_BUBBLE_NR]; /* NOP doesn't have responses */
+  uint16_t answ[COUNTOF(spi_gi_lnke_status_seq)];
   uint16_t chip_id = 0;
   uint16_t pll_lock = 0;
   pilot_error_t ret = PILOT_FAILURE;
 
   do {
 #ifdef GI_ERROR
-      //parity_toggle(&spi_gi_lnke_status[1]); /* to be used for GI bug verification*/
-      parity_toggle(&spi_gi_lnke_status[2]);
-      parity_toggle(&spi_gi_lnke_status[4]);
+      //parity_toggle(&spi_gi_lnke_status_seq[1]); /* to be used for GI bug verification*/
+      parity_toggle(&spi_gi_lnke_status_seq[2]);
+      parity_toggle(&spi_gi_lnke_status_seq[4]);
 #endif
       /* read the LNKE status registers*/
-      if ((GI_transfer((uint16_t*)spi_gi_lnke_status, answ, COUNTOF(spi_gi_lnke_status)) == PILOT_FAILURE) ||
+      if ((GI_transfer((uint16_t*)spi_gi_lnke_status_seq, answ, COUNTOF(spi_gi_lnke_status_seq)) == PILOT_FAILURE) ||
           /* Verify there are valid results in the appropriate answer words */
 	  (popcount(GI_RESPONSE_GET_RESULT_VALID_FLAG(answ[CHIPID_MSB_ANSW_POS])) < 2) ||
 	  (popcount(GI_RESPONSE_GET_RESULT_VALID_FLAG(answ[CHIPID_LSB_ANSW_POS])) < 2) ||
