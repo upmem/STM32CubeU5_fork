@@ -129,29 +129,20 @@ static pilot_error_t GI_transfer(uint16_t* seq, uint16_t* answ, uint16_t word_nr
 }
 
 pilot_error_t gi_init (void) {
-  uint16_t answ[GI_DPU_INIT_SEQ_WORD_NR];
+  uint16_t answ[COUNTOF(gi_init_seq)];
   pilot_error_t ret = PILOT_FAILURE;
   do {
     /* Configure the SPI recovery CNTR to 4 + 128 words */
-    if (GI_transfer((uint16_t *)gi_set_spi_recovery, answ, COUNTOF(gi_set_spi_recovery)) == PILOT_FAILURE){
+    if (GI_transfer((uint16_t *)gi_set_spi_recovery, answ, COUNTOF(gi_set_spi_recovery)) != PILOT_SUCCESS) {
 	break;
     }
 
-    /* Split the DPU init in multiple sequence so that we are able to recover in case of issues */
-    for (uint8_t i = 0; i < DPU_NR; i++)
-    {
-	ret = GI_transfer((uint16_t *)&gi_init_seq[i], answ, COUNTOF(gi_init_seq[i]));
-	if (ret == PILOT_FAILURE) {
-	    break;
-	}
-    }
-
-    if (ret == PILOT_FAILURE) {
+    if (GI_transfer((uint16_t *)gi_init_seq, answ, COUNTOF(gi_init_seq)) != PILOT_SUCCESS) {
 	break;
     }
 
     ret = PILOT_SUCCESS;
-  }while(0);
+  } while(0);
 
   return ret;
 }
