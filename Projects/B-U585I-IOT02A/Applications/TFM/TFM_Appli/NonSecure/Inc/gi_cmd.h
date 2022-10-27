@@ -79,12 +79,20 @@
 #define SET_MSB_PARITY(word)		(word |  EVEN_PARITY(word) << 12)
 
 /* CMD GET_1RESULT */
-#define CMD_GET_1RESULT_CHIP_ID_LSB	(SET_AB(WORD_CMD_1 | 0x0))
-#define CMD_GET_1RESULT_CHIP_ID_MSB	(SET_AB(WORD_CMD_1 | 0x1))
-#define CMD_GET_1RESULT_PLL_LOCK	(SET_AB(WORD_CMD_1 | 0x2))
-#define CMD_GET_1RESULT_CHECK_RES	(SET_AB(WORD_CMD_1 | 0x3))
-#define CMD_GET_1RESULT_TEMP_DEFECT	(SET_AB(WORD_CMD_1 | 0x4))
-#define CMD_GET_1RESULT_SPINE_TEMP	(SET_AB(WORD_CMD_1 | 0x5))
+#define LNKE_CTRL_REG_ID_LSB_ADDR		(0x0)
+#define LNKE_CTRL_REG_ID_MSB_ADDR		(0x1)
+#define LNKE_CTRL_REG_PLL_LOCK_ADDR		(0x2)
+#define LNKE_CTRL_REG_CHECK_OUTCOME_ADDR	(0x3)
+#define LNKE_CTRL_REG_TEMP_CONF_DEFECT_ADDR	(0x4)
+#define LNKE_CTRL_REG_TEMP_ADDR			(0x5)
+
+
+#define CMD_GET_1RESULT_CHIP_ID_LSB		(SET_AB(WORD_CMD_1 | LNKE_CTRL_REG_ID_LSB_ADDR))
+#define CMD_GET_1RESULT_CHIP_ID_MSB		(SET_AB(WORD_CMD_1 | LNKE_CTRL_REG_ID_MSB_ADDR))
+#define CMD_GET_1RESULT_PLL_LOCK		(SET_AB(WORD_CMD_1 | LNKE_CTRL_REG_PLL_LOCK_ADDR))
+#define CMD_GET_1RESULT_CHECK_RES_OUTCOME	(SET_AB(WORD_CMD_1 | LNKE_CTRL_REG_CHECK_OUTCOME_ADDR))
+#define CMD_GET_1RESULT_TEMP_CONF_DEFECT	(SET_AB(WORD_CMD_1 | LNKE_CTRL_REG_TEMP_CONF_DEFECT_ADDR))
+#define CMD_GET_1RESULT_TEMP			(SET_AB(WORD_CMD_1 | LNKE_CTRL_REG_TEMP_ADDR))
 
 /*CMD SELECT */
 #define CMD_SELECT_MODE_NONE		(0x0 << 9)
@@ -186,8 +194,8 @@ const uint16_t gi_set_spi_recovery[] = {
 };
 
 /*
-* Ilink needs to close a cluster (word-signatue, word-signature) in order to process a reading request,
-* if two reading are in the same claster the second would overwrite the first result.
+* Ilink needs to close a cluster (word-signature, word-signature) in order to process a reading request,
+* if two reading are in the same cluster the second would overwrite the first result.
 * Build un-secure sequence with the same logic in order to make it as much as possible
 * portable to secure scenario (signatures are anyway missed)
 */
@@ -201,9 +209,9 @@ const uint16_t spi_gi_lnke_status[] = {
     CMD_GET_1RESULT_PLL_LOCK, CMD_NOP,
 //    CMD_GET_1RESULT_CHIP_ID_LSB, CMD_NOP,
 //    CMD_GET_1RESULT_CHIP_ID_MSB, CMD_NOP,
-//    CMD_GET_1RESULT_CHECK_RES, CMD_NOP,
-//    CMD_GET_1RESULT_TEMP_DEFECT, CMD_NOP,
-//    CMD_GET_1RESULT_SPINE_TEMP, CMD_NOP,
+//    CMD_GET_1RESULT_CHECK_RES_OUTCOME, CMD_NOP,
+//    CMD_GET_1RESULT_TEMP_CONF_DEFECT, CMD_NOP,
+//    CMD_GET_1RESULT_TEMP, CMD_NOP,
     BUBBLE
     /* we should not check the response for the bubbles */
 };
