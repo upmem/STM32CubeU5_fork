@@ -46,7 +46,7 @@ extern "C" {
                                         AES-CTR-128 encryption with key ECIES-P256 encrypted */
 
 /* Crypto scheme selection : begin */
-#define CRYPTO_SCHEME            CRYPTO_SCHEME_RSA2048  /* Select one of available crypto schemes */
+#define CRYPTO_SCHEME            CRYPTO_SCHEME_EC256  /* Select one of available crypto schemes */
 /* Crypto scheme selection : end */
 
 
