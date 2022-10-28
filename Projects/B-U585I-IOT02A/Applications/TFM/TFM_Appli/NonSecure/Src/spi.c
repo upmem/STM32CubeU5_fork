@@ -204,8 +204,6 @@ pilot_error_t SPI_GI_Transmit_Receive(uint16_t* tx_buf, uint16_t* rx_buf, uint16
   pilot_error_t err = PILOT_FAILURE;
   HAL_StatusTypeDef status = HAL_ERROR;
 
-  assert((tx_buf != NULL)||(rx_buf != NULL));
-
   switch(mode)
   {
     /* Send SPI buffer items one by one (ie ChipSelect asserted and de-asserted every uint16_t) */
