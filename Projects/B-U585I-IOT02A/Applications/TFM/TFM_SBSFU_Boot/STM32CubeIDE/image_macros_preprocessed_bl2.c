@@ -32,7 +32,7 @@ enum image_attributes
   RE_LOADER_WRP_START = (((0x100000)-(0x6000))),
   RE_LOADER_WRP_END = ((0x100000)-0x1),
   RE_EXT_LOADER = (0x1),
-  RE_CRYPTO_SCHEME = 0x0,
+  RE_CRYPTO_SCHEME = 0x2,
   RE_ENCRYPTION = (0x1),
   RE_OVER_WRITE = (0x1),
   RE_FLASH_PAGE_NBR = (0x7F)

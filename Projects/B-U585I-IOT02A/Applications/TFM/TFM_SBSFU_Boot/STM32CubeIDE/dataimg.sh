@@ -65,7 +65,7 @@ tfm_ns_enc_sign="$userAppBinary/tfm_ns_data_enc_sign$ver.bin"
 image_ns_size=0x2000
 image_s_size=0x2000
 primary_only=0
-crypto_scheme=0
+crypto_scheme=2
 encrypted=1
 over_write=1
 #end of updated field
