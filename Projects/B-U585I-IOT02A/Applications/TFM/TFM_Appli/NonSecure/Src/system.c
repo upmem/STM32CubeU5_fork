@@ -81,11 +81,11 @@ void SystemPower_Config(void)
 
 }
 
-pilot_error_t check_timeout (uint32_t timestamp, uint32_t timeout) {
+pilot_error_t check_timeout (uint32_t timestamp, uint32_t timeout_ms) {
   pilot_error_t ret = PILOT_SUCCESS;
-  if (timeout != HAL_MAX_DELAY)
+  if (timeout_ms != HAL_MAX_DELAY)
   {
-    if ((HAL_GetTick() - timestamp) < timeout)
+    if ((HAL_GetTick() - timestamp) < timeout_ms)
     {
       ret = PILOT_FAILURE;
     }
