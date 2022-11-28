@@ -25,7 +25,7 @@
 #include "string.h"
 
 /* USER CODE BEGIN Includes */
-
+#include "board_config.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -89,6 +89,8 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef* hspi)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
   RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
+  uint32_t i = 0;
+
   if(hspi->Instance==SPI1)
   {
   /* USER CODE BEGIN SPI1_MspInit 0 */
@@ -113,7 +115,6 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef* hspi)
     PE14     ------> SPI1_MISO
     PE13     ------> SPI1_SCK
     PE15     ------> SPI1_MOSI
-    PA4     ------> SPI1_NSS
     */
     GPIO_InitStruct.Pin = GPIO_PIN_14|GPIO_PIN_13|GPIO_PIN_15;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
@@ -122,12 +123,16 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef* hspi)
     GPIO_InitStruct.Alternate = GPIO_AF5_SPI1;
     HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
-    GPIO_InitStruct.Pin = GPIO_PIN_4;
-    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+    /* Chip Select GPIO */
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-    GPIO_InitStruct.Alternate = GPIO_AF5_SPI1;
-    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+    for (i=0; i<NB_DPU_DRAM; i++)
+    {
+      HAL_GPIO_WritePin(dpu_dram_config[i].ss_port, dpu_dram_config[i].ss_pin, GPIO_PIN_SET);
+      GPIO_InitStruct.Pin = dpu_dram_config[i].ss_pin;
+      HAL_GPIO_Init(dpu_dram_config[i].ss_port, &GPIO_InitStruct);
+    }
 
     /* SPI1 interrupt Init */
     HAL_NVIC_SetPriority(SPI1_IRQn, PILOT_SPI_IRQ_PRIORITY, 0);
