@@ -36,6 +36,11 @@
 			<locationURI>PARENT-7-PROJECT_LOC/Middlewares/Third_Party/FreeRTOS</locationURI>
 		</link>
 		<link>
+			<name>Application/User/board_config.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/NonSecure/Src/board.c</locationURI>
+		</link>
+		<link>
 			<name>Application/User/com.c</name>
 			<type>1</type>
 			<locationURI>PARENT-2-PROJECT_LOC/NonSecure/Src/com.c</locationURI>

@@ -7,6 +7,7 @@
 #include "spi.h"
 #include "stm32u5xx_hal.h"
 #include "stdio.h"
+#include "board_config.h"
 
 SPI_HandleTypeDef handle_SPI_1;
 SPI_HandleTypeDef handle_SPI_3;
@@ -14,7 +15,10 @@ SPI_HandleTypeDef handle_SPI_3;
 #define SPI_DEBUG
 #endif
 #define SPI_16BIT_TIMEOUT_MS (5) /* should be >= 2; value of 1 can result in interrupted transfers */
-
+/* If DPU PLL disabled, DPU speed is based on External Oscillator (typ 10MHz) with div8 configuration = 1.25MHz
+ * Reset hold time should be at least superior to 2x DPU Period = 3.2µs
+ */
+#define HARDWARE_RESET_HOLD_TIME_MS (1)
 
 /**
   * @brief SPI1 Initialization Function
@@ -40,7 +44,7 @@ static void MX_SPI1_Init(void)
   handle_SPI_1.Init.DataSize = SPI_DATASIZE_16BIT;
   handle_SPI_1.Init.CLKPolarity = SPI_POLARITY_LOW;
   handle_SPI_1.Init.CLKPhase = SPI_PHASE_1EDGE;
-  handle_SPI_1.Init.NSS = SPI_NSS_HARD_OUTPUT;
+  handle_SPI_1.Init.NSS = SPI_NSS_SOFT;
   handle_SPI_1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_128; // SYSCLK/128 = 1.25MBits/s @160MHz
   handle_SPI_1.Init.FirstBit = SPI_FIRSTBIT_LSB;
   handle_SPI_1.Init.TIMode = SPI_TIMODE_DISABLE;
@@ -150,15 +154,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOH, &GPIO_InitStruct);
 
-
-  /*Configure LED pins : PH6 PH7 */
-  HAL_GPIO_WritePin(GPIOH, GPIO_PIN_6|GPIO_PIN_7, GPIO_PIN_SET); // SET = LED OFF
-  GPIO_InitStruct.Pin = GPIO_PIN_6|GPIO_PIN_7;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOH, &GPIO_InitStruct);
-
 }
 
 void SPI_Init(void)
@@ -190,15 +185,27 @@ static void SPI_debug (uint16_t* tx_buf, uint16_t* rx_buf, uint16_t len, int mod
   }
 #endif
 }
+
+static void set_ss(uint16_t ss_mask, uint32_t state)
+{
+  uint32_t i;
+  for (i=0; i<NB_DPU_DRAM; i++)
+  {
+    if(ss_mask & ((uint16_t)1 << i))
+      HAL_GPIO_WritePin(dpu_dram_config[i].ss_port, dpu_dram_config[i].ss_pin, state);
+  }
+}
+
 /**
   * @brief  Transmit and Receive data to Global Interface using SPI
+  * @param  ss_mask: Slave Select bit mask
   * @param  tx_buf: pointer to transmission data buffer, can be NULL if receive only
   * @param  rx_buf: pointer to reception data buffer, can be NULL if transmit only
   * @param  len   : amount of data to be sent and received
   * @param  mode  : SPI transfert mode, to send either 16bit mode or in burst mode
   * @retval HAL status
   */
-pilot_error_t SPI_GI_Transmit_Receive(uint16_t* tx_buf, uint16_t* rx_buf, uint16_t len, int mode)
+pilot_error_t SPI_GI_Transmit_Receive(uint16_t ss_mask, uint16_t* tx_buf, uint16_t* rx_buf, uint16_t len, int mode)
 {
   uint16_t i;
   pilot_error_t err = PILOT_FAILURE;
@@ -210,12 +217,14 @@ pilot_error_t SPI_GI_Transmit_Receive(uint16_t* tx_buf, uint16_t* rx_buf, uint16
     case SPI_TRANSFERT_MODE_16BIT_BLOCKING:
       for (i=0; i<len; i++)
       {
+        set_ss(ss_mask, GPIO_PIN_RESET); // Set SS Low
         if (rx_buf != NULL && tx_buf != NULL)
           status = HAL_SPI_TransmitReceive(&handle_SPI_1, (uint8_t *)&(tx_buf[i]), (uint8_t *)&(rx_buf[i]), 1, SPI_16BIT_TIMEOUT_MS);
         else if (rx_buf == NULL && tx_buf != NULL)
           status = HAL_SPI_Transmit(&handle_SPI_1, (uint8_t *)&(tx_buf[i]), 1, SPI_16BIT_TIMEOUT_MS);
         else if (rx_buf != NULL && tx_buf == NULL)
           status = HAL_SPI_Receive(&handle_SPI_1, (uint8_t *)&(rx_buf[i]), 1, SPI_16BIT_TIMEOUT_MS);
+        set_ss(ss_mask, GPIO_PIN_SET); // Set SS high
         if (status != HAL_OK)
           break;
       }
@@ -223,16 +232,19 @@ pilot_error_t SPI_GI_Transmit_Receive(uint16_t* tx_buf, uint16_t* rx_buf, uint16
 
     /* Send SPI buffer in a single BURST (ie ChipSelect asserted only once) */
     case SPI_TRANSFERT_MODE_BURST_BLOCKING:
+      set_ss(ss_mask, GPIO_PIN_RESET); // Set SS Low
       if (rx_buf != NULL && tx_buf != NULL)
         status = HAL_SPI_TransmitReceive(&handle_SPI_1, (uint8_t *)tx_buf, (uint8_t *)rx_buf, len, SPI_16BIT_TIMEOUT_MS*len);
       else if (rx_buf == NULL && tx_buf != NULL)
         status = HAL_SPI_Transmit(&handle_SPI_1, (uint8_t *)tx_buf, len, SPI_16BIT_TIMEOUT_MS*len);
       else if (rx_buf != NULL && tx_buf == NULL)
         status = HAL_SPI_Receive(&handle_SPI_1, (uint8_t *)rx_buf, len, SPI_16BIT_TIMEOUT_MS*len);
+      set_ss(ss_mask, GPIO_PIN_SET); // Set SS high
       break;
 
     /* Send SPI buffer using DMA (ChipSelect asserted only once) */
     case SPI_TRANSFERT_MODE_DMA:
+      set_ss(ss_mask, GPIO_PIN_RESET);  // Set SS Low. Will be set high in interrupt
       if (rx_buf != NULL && tx_buf != NULL)
         status = HAL_SPI_TransmitReceive_DMA(&handle_SPI_1, (uint8_t *)tx_buf, (uint8_t *)rx_buf, len);
       else if (rx_buf == NULL && tx_buf != NULL)
@@ -255,11 +267,27 @@ pilot_error_t SPI_GI_Transmit_Receive(uint16_t* tx_buf, uint16_t* rx_buf, uint16
   return err;
 }
 
+/**
+  * @brief  Trigger Hardware Reset procedure : SS goes low and high with no data
+  * @param  ss_mask: Slave Select bit mask
+  * @retval HAL status
+  */
+void SPI_HW_Reset(uint16_t ss_mask)
+{
+  set_ss(ss_mask, GPIO_PIN_RESET); // Set SS low
+  HAL_Delay(HARDWARE_RESET_HOLD_TIME_MS);
+  set_ss(ss_mask, GPIO_PIN_SET); // Set SS high
+
+}
+
 void SPI_Com_Complete(SPI_HandleTypeDef *hspi)
 {
-  if (hspi == &handle_SPI_1) // SPI1 : toggle GREEN
+
+  if (hspi == &handle_SPI_1)
   {
-    HAL_GPIO_TogglePin(GPIOH, GPIO_PIN_7);
+    /* Set Chip Select High */
+    // TODO : handle 16 different ChipSelect ?
+    set_ss(DPU_DRAM_MASK_ALL, GPIO_PIN_RESET);
   }
 }
 
@@ -267,8 +295,16 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 {
   SPI_Com_Complete(hspi);
 }
-
 void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
 {
+  SPI_Com_Complete(hspi);
+}
+void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi)
+{
+  SPI_Com_Complete(hspi);
+}
+void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi)
+{
+  // TODO : handle error ?
   SPI_Com_Complete(hspi);
 }

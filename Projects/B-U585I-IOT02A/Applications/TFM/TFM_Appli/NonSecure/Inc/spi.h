@@ -13,7 +13,8 @@
 #include "error.h"
 
 void SPI_Init(void);
-pilot_error_t SPI_GI_Transmit_Receive(uint16_t* tx_buf, uint16_t* rx_buf, uint16_t len, int mode);
+pilot_error_t SPI_GI_Transmit_Receive(uint16_t ss_mask, uint16_t* tx_buf, uint16_t* rx_buf, uint16_t len, int mode);
+void SPI_HW_Reset(uint16_t ss_mask);
 
 /* possible transfert modes for SPI */
 #define SPI_TRANSFERT_MODE_16BIT_BLOCKING  0
