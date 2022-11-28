@@ -8,10 +8,9 @@
 #include <string.h>
 #include "error.h"
 #include "gi_cmd_handler.h"
-#include "gi_cmd.h"
 #include "spi.h"
 #include "system.h"
-
+#include "bitops.h"
 #ifdef DEBUG
 #define GI_DEBUG
 #endif
@@ -22,6 +21,24 @@
 #define GI_TIMEOUT	(TIME_MS(10U)) /* 10 ms */
 #endif
 
+static pilot_error_t GI_transfer(uint16_t* seq, uint16_t* answ, uint16_t word_nr);
+static pilot_error_t check_answer(uint16_t *answ, uint32_t word_nr, uint32_t *valid_nr);
+uint16_t spi_recovery_ignored_words_nr = 516;
+#define COUNTOF(array) (sizeof(array)/sizeof(array[0]))
+
+#ifdef SEC_EN
+#define cipher_en (1)
+#include "gi_cmd_sec.h"
+/*
+ * The first answer word, related to the previous SPI sequence,
+ * is not copied in the response buffer
+*/
+#define  CHIPID_MSB_ANSW_POS     (8)
+#define  CHIPID_LSB_ANSW_POS     (4)
+#define  PLL_LOCK_ANSW_POS       (12)
+#else
+#define cipher_en (0)
+#include "gi_cmd.h"
 /*
  * The first answer word, related to the previous SPI sequence,
  * is not copied in the response buffer
@@ -29,14 +46,21 @@
 #define  CHIPID_MSB_ANSW_POS     (4-1)
 #define  CHIPID_LSB_ANSW_POS     (2-1)
 #define  PLL_LOCK_ANSW_POS       (6-1)
-#define  BUBBLE_NR_128	     (128)
+#endif
+/*
+ * NR of BUBBLEs needed to overcome the SPI latency
+ * we should not check the response for the BUBBLE
+*/
+#define SPI_DRAIN_BUBBLE_NR	(1)
+
+#define SPI_IGNORE_WORDS_4	(4)
+#define SPI_IGNORE_WORDS_132	(132)
+#define SPI_IGNORE_WORDS_260	(260)
+#define SPI_IGNORE_WORDS_516	(516)
 
 #define  CHIP_ID_FPGA        (0x0515)
-#define COUNTOF(array) (sizeof(array)/sizeof(array[0]))
-
 
 uint16_t gi_tmp_buffer[512];
-uint16_t spi_recovery_ignored_words_nr = 516;
 
 static void print_gi_word(uint16_t word)
 {
@@ -69,18 +93,6 @@ static pilot_error_t check_answer(uint16_t *answ, uint32_t word_nr, uint32_t *va
       }
   }
   return ret;
-}
-
-static void gi_resume () {
-  /* Send recovery frame */
-  if (
-      (SPI_GI_Transmit_Receive((uint16_t *)bubble_seq, gi_tmp_buffer, spi_recovery_ignored_words_nr, SPI_TRANSFERT_MODE_BURST_BLOCKING) != PILOT_SUCCESS) ||
-      (SPI_GI_Transmit_Receive((uint16_t *)resume_seq, gi_tmp_buffer, COUNTOF(resume_seq), SPI_TRANSFERT_MODE_BURST_BLOCKING) != PILOT_SUCCESS) ||
-      /* Only the last answer word is of interest, we don't need to check BUBBLE responses */
-      (check_answer(&gi_tmp_buffer[COUNTOF(resume_seq) - 1], 1, NULL) != PILOT_SUCCESS)
-  ){
-      Error_Handler();
-  }
 }
 
 #ifdef GI_ERROR
@@ -124,11 +136,11 @@ static pilot_error_t GI_transfer(uint16_t* seq, uint16_t* answ, uint16_t word_nr
 
     /* Copy to the answer buffer the valid response only, the first answer word is ignored */
     memcpy(answ, &gi_tmp_buffer[SPI_DRAIN_BUBBLE_NR], valid_nr * sizeof(uint16_t));
-    /* If needed resend part of the sequence */
+    /* If needed re-send part of the sequence */
     answ += valid_nr;
     seq +=valid_nr;
     word_nr -=valid_nr;
-  } while((check_timeout(timestamp, GI_TIMEOUT) != PILOT_SUCCESS) && (error));
+  } while((!cipher_en) && ((check_timeout(timestamp, GI_TIMEOUT) != PILOT_SUCCESS) && (error)));
 
   if (!error) {
     ret = PILOT_SUCCESS;
@@ -136,56 +148,23 @@ static pilot_error_t GI_transfer(uint16_t* seq, uint16_t* answ, uint16_t word_nr
   return ret;
 }
 
-
-static pilot_error_t gi_set_spi_recovery (uint8_t conf) {
-  uint16_t answ[sizeof(gi_set_spi_recovery_seq)/sizeof(uint16_t)];
-  pilot_error_t ret = PILOT_FAILURE;
-  uint16_t ignored_words_nr;
-
-  switch (conf) {
-    case(SPI_RECOVERY_4):
-	gi_set_spi_recovery_seq[1] = CMD_WRITE_REG_A_SPI_RECOVERY(SPI_RECOVERY_4);
-	ignored_words_nr = 4;
-	break;
-    case(SPI_RECOVERY_132):
-	gi_set_spi_recovery_seq[1] = CMD_WRITE_REG_A_SPI_RECOVERY(SPI_RECOVERY_132);
-	ignored_words_nr = 132;
-	break;
-    case(SPI_RECOVERY_260):
-	gi_set_spi_recovery_seq[1] = CMD_WRITE_REG_A_SPI_RECOVERY(SPI_RECOVERY_260);
-	ignored_words_nr = 260;
-	break;
-    case(SPI_RECOVERY_516):
-	gi_set_spi_recovery_seq[1] = CMD_WRITE_REG_A_SPI_RECOVERY(SPI_RECOVERY_516);
-	ignored_words_nr = 516;
-	break;
-    default:
-	gi_set_spi_recovery_seq[1] = CMD_WRITE_REG_A_SPI_RECOVERY(SPI_RECOVERY_516);
-	ignored_words_nr = 516;
-	break;
-  }
-
-  /* Configure the SPI recovery CNTR to 4 + bubble_nr words */
-  if (GI_transfer((uint16_t *)gi_set_spi_recovery_seq, answ, sizeof (gi_set_spi_recovery_seq)/sizeof(uint16_t)) == PILOT_SUCCESS) {
-	ret = PILOT_SUCCESS;
-	spi_recovery_ignored_words_nr = ignored_words_nr;
-  }
-  return ret;
-}
-
 pilot_error_t gi_init (void) {
-  uint16_t answ[COUNTOF(gi_init_seq)];
+  uint16_t answ[COUNTOF(init_dpu_id_seq)];
   pilot_error_t ret = PILOT_FAILURE;
   do {
-    /* Configure the SPI recovery CNTR to 4 + 128 words */
-    if (gi_set_spi_recovery(SPI_RECOVERY_132) != PILOT_SUCCESS) {
+
+    if (cipher_en) {
+      if (gi_set_lnke_security() != PILOT_SUCCESS){
+	break;
+      }
+    } else {
+      if (gi_set_spi_recovery(SPI_IGNORE_WORDS_132) != PILOT_SUCCESS){
+	break;
+      }
+    }
+    if (GI_transfer((uint16_t *)init_dpu_id_seq, answ, COUNTOF(init_dpu_id_seq)) != PILOT_SUCCESS) {
 	break;
     }
-
-    if (GI_transfer((uint16_t *)gi_init_seq, answ, COUNTOF(gi_init_seq)) != PILOT_SUCCESS) {
-	break;
-    }
-
     ret = PILOT_SUCCESS;
   } while(0);
 
