@@ -26,7 +26,7 @@ static pilot_error_t check_answer(uint16_t *answ, uint32_t word_nr, uint32_t *va
 uint16_t spi_recovery_ignored_words_nr = 516;
 #define COUNTOF(array) (sizeof(array)/sizeof(array[0]))
 
-#ifdef SEC_EN
+#ifdef CIPHER_EN
 #define cipher_en (1)
 #include "gi_cmd_sec.h"
 /*
@@ -43,9 +43,9 @@ uint16_t spi_recovery_ignored_words_nr = 516;
  * The first answer word, related to the previous SPI sequence,
  * is not copied in the response buffer
 */
-#define  CHIPID_MSB_ANSW_POS     (4-1)
-#define  CHIPID_LSB_ANSW_POS     (2-1)
-#define  PLL_LOCK_ANSW_POS       (6-1)
+#define  CHIPID_MSB_ANSW_POS     (3)
+#define  CHIPID_LSB_ANSW_POS     (1)
+#define  PLL_LOCK_ANSW_POS       (5)
 #endif
 /*
  * NR of BUBBLEs needed to overcome the SPI latency
@@ -95,14 +95,6 @@ static pilot_error_t check_answer(uint16_t *answ, uint32_t word_nr, uint32_t *va
   return ret;
 }
 
-#ifdef GI_ERROR
-static void parity_toggle (uint16_t *word) {
-  printf("before toggle 0x%x\r\n", *word);
-  *word = *word ^ (1 << 8);
-  printf("after toggle 0x%x\r\n", *word);
-}
-#endif
-
 
 /*
  * This function takes care of possible SPI transmission errors
@@ -120,9 +112,6 @@ static pilot_error_t GI_transfer(uint16_t* seq, uint16_t* answ, uint16_t word_nr
 	/* Send BUBBLEs in accordance to RECOVERY CTRL register */
 	gi_resume();
 	error = 0;
-#ifdef GI_ERROR
-	parity_toggle(seq);
-#endif
     }
     /* Send words over SPI */
     if (SPI_GI_Transmit_Receive(seq, gi_tmp_buffer, word_nr, SPI_TRANSFERT_MODE_BURST_BLOCKING) != PILOT_SUCCESS) {
@@ -179,11 +168,6 @@ pilot_error_t gi_check_lnke_status (void) {
   pilot_error_t ret = PILOT_FAILURE;
 
   do {
-#ifdef GI_ERROR
-      //parity_toggle(&spi_gi_lnke_status_seq[1]); /* to be used for GI bug verification*/
-      parity_toggle(&spi_gi_lnke_status_seq[2]);
-      parity_toggle(&spi_gi_lnke_status_seq[4]);
-#endif
       /* read the LNKE status registers*/
       if ((GI_transfer((uint16_t*)spi_gi_lnke_status_seq, answ, COUNTOF(spi_gi_lnke_status_seq)) == PILOT_FAILURE) ||
           /* Verify there are valid results in the appropriate answer words */

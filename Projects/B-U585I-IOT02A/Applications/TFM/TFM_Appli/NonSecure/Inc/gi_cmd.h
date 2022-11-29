@@ -9,14 +9,6 @@
 
 #include "bitops.h"
 
-#ifdef DEBUG
-/*
- * TODO This define as well as the related code must be deleted
- * There is a bug in the GI, this define will be used to verify the fix
-*/
-//#define GI_ERROR
-#endif
-
 /* -------------------
  * Answer definition
  * -------------------
@@ -205,11 +197,7 @@ uint16_t gi_set_spi_recovery_seq[] =
 * Build un-secure sequence with the same logic in order to make it as much as possible
 * portable to secure scenario (signatures are anyway missed)
 */
-#ifdef GI_ERROR
-uint16_t spi_gi_lnke_status_seq[] =
-#else
 const uint16_t spi_gi_lnke_status_seq[] =
-#endif
 {
     CMD_GET_1RESULT_CHIP_ID_LSB, CMD_NOP,
     CMD_GET_1RESULT_CHIP_ID_MSB, CMD_NOP,
