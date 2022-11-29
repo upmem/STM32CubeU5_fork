@@ -7,30 +7,6 @@
 #ifndef __GI_CMD_SEC_H__
 #define __GI_CMD_SEC_H__
 
-/* -------------------
- * Answer definition
- * -------------------
- * when PILOT transmits a 16-bits word on MOSI line through SPI interface,
- * the DPU-DRAM transmits at the same time a 16-bits answer on MISO line
- * whom the bitfield is described as follows:
- *
- * [15] Word Odd Parity Flag of previously received SPI word
- * [14] Word Odd Parity Flag of previously received SPI word
- * [13] Word Odd Parity Flag of previously received SPI word
- * [12] Result Valid Flag
- * [11] Result Valid Flag
- * [10] Result Valid Flag
- * [9] Reserved - 0b0
- * [8] Odd Parity Flag of Result data (RESULT[7:0])
- * [7:0] Result data (RESULT[7:0])
- */
-
-#define GI_RESPONSE_GET_PREVIOUS_ODD_FLAG(x) ((x & 0xE000) >> 13)
-#define GI_RESPONSE_GET_RESULT_VALID_FLAG(x) ((x & 0x1C00) >> 10)
-#define GI_RESPONSE_GET_RESERVED(x)          ((x & 0x0200) >> 9)
-#define GI_RESPONSE_GET_ODD_FLAG(x)          ((x & 0x0100) >> 8)
-#define GI_RESPONSE_GET_RESULT(x)            ((x & 0x00FF) >> 0)
-
 /* ---------------------
  * Secure sequences
  * ---------------------
@@ -76,12 +52,19 @@ const uint16_t spi_gi_lnke_status_seq[] = {
     0xe0fc, 0xafc7, 0xf1aa, 0x5818,
     0x0000,
 };
-
+/*
+ * The first answer word, related to the previous SPI sequence,
+ * is not copied in the response buffer
+*/
+#define  CHIPID_MSB_ANSW_POS     (8)
+#define  CHIPID_LSB_ANSW_POS     (4)
+#define  PLL_LOCK_ANSW_POS       (12)
 
 /* ---------------------
- * Scpecure functions
+ * Secure functions
  * ---------------------
 */
+static pilot_error_t GI_transfer(uint16_t* seq, uint16_t* answ, uint16_t word_nr);
 static pilot_error_t gi_set_spi_recovery (uint8_t conf) {
   return PILOT_SUCCESS;
 }
