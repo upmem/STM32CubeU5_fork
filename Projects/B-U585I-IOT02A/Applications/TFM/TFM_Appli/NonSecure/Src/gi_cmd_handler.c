@@ -3,7 +3,6 @@
  * Copyright (c) 2022 UPMEM.
  *
  */
-
 #include <stdio.h>
 #include <string.h>
 #include "error.h"
@@ -11,6 +10,14 @@
 #include "spi.h"
 #include "system.h"
 #include "bitops.h"
+#ifdef GI_CIPHER_EN
+#define gi_cipher_en (1)
+#include "gi_cmd_sec.h"
+#else
+#define gi_cipher_en (0)
+#include "gi_cmd.h"
+#endif
+
 #ifdef DEBUG
 #define GI_DEBUG
 #endif
@@ -21,44 +28,41 @@
 #define GI_TIMEOUT	(TIME_MS(10U)) /* 10 ms */
 #endif
 
-static pilot_error_t GI_transfer(uint16_t* seq, uint16_t* answ, uint16_t word_nr);
-static pilot_error_t check_answer(uint16_t *answ, uint32_t word_nr, uint32_t *valid_nr);
-uint16_t spi_recovery_ignored_words_nr = 516;
-#define COUNTOF(array) (sizeof(array)/sizeof(array[0]))
-
-#ifdef CIPHER_EN
-#define cipher_en (1)
-#include "gi_cmd_sec.h"
-/*
- * The first answer word, related to the previous SPI sequence,
- * is not copied in the response buffer
-*/
-#define  CHIPID_MSB_ANSW_POS     (8)
-#define  CHIPID_LSB_ANSW_POS     (4)
-#define  PLL_LOCK_ANSW_POS       (12)
-#else
-#define cipher_en (0)
-#include "gi_cmd.h"
-/*
- * The first answer word, related to the previous SPI sequence,
- * is not copied in the response buffer
-*/
-#define  CHIPID_MSB_ANSW_POS     (3)
-#define  CHIPID_LSB_ANSW_POS     (1)
-#define  PLL_LOCK_ANSW_POS       (5)
-#endif
+/* -------------------
+ * Answer definition
+ * -------------------
+ * when PILOT transmits a 16-bits word on MOSI line through SPI interface,
+ * the DPU-DRAM transmits at the same time a 16-bits answer on MISO line
+ * whom the bitfield is described as follows:
+ *
+ * [15] Word Odd Parity Flag of previously received SPI word
+ * [14] Word Odd Parity Flag of previously received SPI word
+ * [13] Word Odd Parity Flag of previously received SPI word
+ * [12] Result Valid Flag
+ * [11] Result Valid Flag
+ * [10] Result Valid Flag
+ * [9] Reserved - 0b0
+ * [8] Odd Parity Flag of Result data (RESULT[7:0])
+ * [7:0] Result data (RESULT[7:0])
+ */
+#define GI_RESPONSE_GET_PREVIOUS_ODD_FLAG(x) ((x & 0xE000) >> 13)
+#define GI_RESPONSE_GET_RESULT_VALID_FLAG(x) ((x & 0x1C00) >> 10)
+#define GI_RESPONSE_GET_RESERVED(x)          ((x & 0x0200) >> 9)
+#define GI_RESPONSE_GET_ODD_FLAG(x)          ((x & 0x0100) >> 8)
+#define GI_RESPONSE_GET_RESULT(x)            ((x & 0x00FF) >> 0)
 /*
  * NR of BUBBLEs needed to overcome the SPI latency
  * we should not check the response for the BUBBLE
 */
 #define SPI_DRAIN_BUBBLE_NR	(1)
 
-#define SPI_IGNORE_WORDS_4	(4)
-#define SPI_IGNORE_WORDS_132	(132)
-#define SPI_IGNORE_WORDS_260	(260)
-#define SPI_IGNORE_WORDS_516	(516)
+#define SPI_IGNORE_WORDS_4     (4)
+#define SPI_IGNORE_WORDS_132   (132)
+#define SPI_IGNORE_WORDS_260   (260)
+#define SPI_IGNORE_WORDS_516   (516)
 
-#define  CHIP_ID_FPGA        (0x0515)
+#define CHIP_ID_FPGA        (0x0515)
+#define COUNTOF(array) (sizeof(array)/sizeof(array[0]))
 
 uint16_t gi_tmp_buffer[512];
 
@@ -97,7 +101,9 @@ static pilot_error_t check_answer(uint16_t *answ, uint32_t word_nr, uint32_t *va
 
 
 /*
- * This function takes care of possible SPI transmission errors
+ * This function takes care of possible SPI transmission errors:
+ * - If GI cipher is enabled the function fails on transmission error
+ * - If the GI cipher is disabled the function resume the GI transmission as per specification
  * Only valid answers are copied to the answ buffer:
  * - Answer words related to transmission errors are not copied to the answ buffer
  * - The first answer word, related to the previous sequence, is not copied to the answ buffer
@@ -118,7 +124,7 @@ static pilot_error_t GI_transfer(uint16_t* seq, uint16_t* answ, uint16_t word_nr
 	Error_Handler();
     }
 
-    /* Send the answer skipping the drain bubble */
+    /* Check the answer, the first answer word is ignored  */
     if (check_answer(&gi_tmp_buffer[SPI_DRAIN_BUBBLE_NR], word_nr - SPI_DRAIN_BUBBLE_NR, &valid_nr) != PILOT_SUCCESS) {
 	error = 1;
     }
@@ -129,7 +135,7 @@ static pilot_error_t GI_transfer(uint16_t* seq, uint16_t* answ, uint16_t word_nr
     answ += valid_nr;
     seq +=valid_nr;
     word_nr -=valid_nr;
-  } while((!cipher_en) && ((check_timeout(timestamp, GI_TIMEOUT) != PILOT_SUCCESS) && (error)));
+  } while((!gi_cipher_en) && ((check_timeout(timestamp, GI_TIMEOUT) != PILOT_SUCCESS) && (error)));
 
   if (!error) {
     ret = PILOT_SUCCESS;
@@ -142,7 +148,7 @@ pilot_error_t gi_init (void) {
   pilot_error_t ret = PILOT_FAILURE;
   do {
 
-    if (cipher_en) {
+    if (gi_cipher_en) {
       if (gi_set_lnke_security() != PILOT_SUCCESS){
 	break;
       }

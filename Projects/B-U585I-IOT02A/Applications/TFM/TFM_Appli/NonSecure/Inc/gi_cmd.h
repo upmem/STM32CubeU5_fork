@@ -10,30 +10,6 @@
 #include "bitops.h"
 
 /* -------------------
- * Answer definition
- * -------------------
- * when PILOT transmits a 16-bits word on MOSI line through SPI interface,
- * the DPU-DRAM transmits at the same time a 16-bits answer on MISO line
- * whom the bitfield is described as follows:
- *
- * [15] Word Odd Parity Flag of previously received SPI word
- * [14] Word Odd Parity Flag of previously received SPI word
- * [13] Word Odd Parity Flag of previously received SPI word
- * [12] Result Valid Flag
- * [11] Result Valid Flag
- * [10] Result Valid Flag
- * [9] Reserved - 0b0
- * [8] Odd Parity Flag of Result data (RESULT[7:0])
- * [7:0] Result data (RESULT[7:0])
- */
-
-#define GI_RESPONSE_GET_PREVIOUS_ODD_FLAG(x) ((x & 0xE000) >> 13)
-#define GI_RESPONSE_GET_RESULT_VALID_FLAG(x) ((x & 0x1C00) >> 10)
-#define GI_RESPONSE_GET_RESERVED(x)          ((x & 0x0200) >> 9)
-#define GI_RESPONSE_GET_ODD_FLAG(x)          ((x & 0x0100) >> 8)
-#define GI_RESPONSE_GET_RESULT(x)            ((x & 0x00FF) >> 0)
-
-/* -------------------
  * Words definition
  * -------------------
 */
@@ -154,8 +130,6 @@
 
 /* Used as input of encryption script - do not delete */
 const uint16_t gi_cipher_en_seq [] = {
-    //0x8900, 0x5800,
-    //0x5b00, 0x5800,
     ESC_PARAM_CLEAR, ESC_INIT_KEY(ESC_INIT_KEY_PRIMING_DIS),
     CMD_SELECT_LNKE, CMD_WRITE_REG_B_CFG_SEC((CFG_SEC_DPU_SECURE_EN | CFG_SEC_DPU_MUTED_DIS)),
     CMD_SELECT_NONE, CMD_NOP,
@@ -205,7 +179,13 @@ const uint16_t spi_gi_lnke_status_seq[] =
     CMD_NOP, CMD_NOP,
     BUBBLE
 };
-
+/*
+ * The first answer word, related to the previous SPI sequence,
+ * is not copied in the response buffer
+*/
+#define  CHIPID_MSB_ANSW_POS     (3)
+#define  CHIPID_LSB_ANSW_POS     (1)
+#define  PLL_LOCK_ANSW_POS       (5)
 
 /* Due to RECOVERY CTRL setting we need 4 + 512 BUBBLEs at max */
 const uint16_t bubble_seq[] = {
@@ -284,6 +264,11 @@ const uint16_t resume_seq[] = {
  * Unsecure functions
  * ---------------------
 */
+
+static pilot_error_t GI_transfer(uint16_t* seq, uint16_t* answ, uint16_t word_nr);
+static pilot_error_t check_answer(uint16_t *answ, uint32_t word_nr, uint32_t *valid_nr);
+uint16_t gi_tmp_buffer[];
+uint16_t spi_recovery_ignored_words_nr = 516;
 static pilot_error_t gi_set_spi_recovery (uint16_t conf) {
   uint16_t answ[sizeof(gi_set_spi_recovery_seq)/sizeof(uint16_t)];
   pilot_error_t ret = PILOT_FAILURE;
@@ -320,14 +305,13 @@ static pilot_error_t gi_set_spi_recovery (uint16_t conf) {
   return ret;
 }
 
-extern uint16_t gi_tmp_buffer[];
 static void gi_resume () {
   /* Send recovery frame */
   if (
       (SPI_GI_Transmit_Receive((uint16_t *)bubble_seq, gi_tmp_buffer, spi_recovery_ignored_words_nr, SPI_TRANSFERT_MODE_BURST_BLOCKING) != PILOT_SUCCESS) ||
-      (SPI_GI_Transmit_Receive((uint16_t *)resume_seq, gi_tmp_buffer, COUNTOF(resume_seq), SPI_TRANSFERT_MODE_BURST_BLOCKING) != PILOT_SUCCESS) ||
+      (SPI_GI_Transmit_Receive((uint16_t *)resume_seq, gi_tmp_buffer, sizeof(resume_seq)/sizeof(uint16_t), SPI_TRANSFERT_MODE_BURST_BLOCKING) != PILOT_SUCCESS) ||
       /* Only the last answer word is of interest, we don't need to check BUBBLE responses */
-      (check_answer(&gi_tmp_buffer[COUNTOF(resume_seq) - 1], 1, NULL) != PILOT_SUCCESS)
+      (check_answer(&gi_tmp_buffer[sizeof(resume_seq)/sizeof(uint16_t) - 1], 1, NULL) != PILOT_SUCCESS)
   ){
       Error_Handler();
   }
