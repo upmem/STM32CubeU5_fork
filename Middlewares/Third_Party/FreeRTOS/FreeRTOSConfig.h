@@ -186,5 +186,5 @@ extern uint32_t SystemCoreClock;
 //#define vPortSVCHandler SVC_Handler
 //#define xPortPendSVHandler PendSV_Handler
 //#define xPortSysTickHandler SysTick_Handler
-
+#define pdMS_TO_TICKS( xTimeInMs ) (xTimeInMs)
 #endif /* FREERTOS_CONFIG_H */

@@ -83,8 +83,6 @@ static void uart_putc(unsigned char c)
 {
   COM_Transmit(&c, 1, 1000U);
 }
-static void my_first_task (void *pvParameters);
-static void my_second_task (void *pvParameters);
 static void RTOS_Init(void);
 
 /* Redirects printf to TFM_DRIVER_STDIO in case of ARMCLANG*/
@@ -202,38 +200,18 @@ static void RTOS_Init(void) {
   //mutex = xSemaphoreCreateMutex();
 
   /* tasks */
-  xTaskCreate(my_first_task, "my first task", configMINIMAL_STACK_SIZE, NULL, 2, NULL);
-  xTaskCreate(my_second_task, "my second task", configMINIMAL_STACK_SIZE, NULL, 1, NULL);
+  //xTaskCreate(my_first_task, "my first task", configMINIMAL_STACK_SIZE, NULL, 2, NULL);
+  //xTaskCreate(my_second_task, "my second task", configMINIMAL_STACK_SIZE, NULL, 1, NULL);
+
+  if (xTaskCreate(mailbox_polling, "mailbox_polling", configMINIMAL_STACK_SIZE, NULL, 1, NULL) != pdPASS) {
+      Error_Handler();
+  }
 
   /* Start scheduler */
   vTaskStartScheduler();
+  /* we should never reach here */
+  while(1);
 }
-
-void my_first_task (void *pvParameters) {
-  for (;;) {
-    struct test_result_t ret;
-    ret.val = TEST_FAILED;
-    psa_aead_test(PSA_KEY_TYPE_AES, PSA_ALG_GCM, &ret);
-    printf("%s", (ret.val == TEST_PASSED) ? "1" : "x");
-    HAL_Delay(500);
-  }
-}
-
-void my_second_task (void *pvParameters) {
-  static int cnt;
-  struct test_result_t ret;
-  for (;;) {
-    ret.val = TEST_FAILED;
-    psa_hash_test(PSA_ALG_SHA_256, &ret);
-    printf("%s", (ret.val == TEST_PASSED) ? "2" : "x");
-      cnt ++;
-      if(cnt / 32) {
-        printf("\r\n");
-	cnt = 0;
-      }
-    }
-}
-
 
 
 #ifdef  USE_FULL_ASSERT
@@ -334,29 +312,6 @@ void vApplicationIdleHook( void )
 //    return HAL_OK;
 //}
 
-void HAL_Delay( uint32_t ulDelayMs )
-{
-    if( xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED )
-    {
-        vTaskDelay( pdMS_TO_TICKS( ulDelayMs ) );
-    }
-    else
-    {
-        uint32_t ulStartTick = HAL_GetTick();
-        uint32_t ulTicksWaited = ulDelayMs;
-
-        /* Add a freq to guarantee minimum wait */
-        if( ulTicksWaited < HAL_MAX_DELAY )
-        {
-            ulTicksWaited += ( uint32_t ) ( HAL_GetTickFreq() );
-        }
-
-        while( ( HAL_GetTick() - ulStartTick ) < ulTicksWaited )
-        {
-            __NOP();
-        }
-    }
-}
 
 /**
   * @}

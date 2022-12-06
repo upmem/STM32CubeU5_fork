@@ -1,0 +1,205 @@
+/**
+ *
+ * Copyright (c) 2022 UPMEM.
+ *
+ */
+
+#ifndef __GI_UNSEC_H__
+#define __GI_UNSEC_H__
+#include "gi_cmd.h"
+
+/* -------------------
+ * Unsecure Sequences
+ * -------------------
+*/
+
+/* Used as input of encryption script - do not delete */
+const uint16_t gi_cipher_en_seq [] = {
+    ESC_PARAM_CLEAR, ESC_INIT_KEY(ESC_INIT_KEY_PRIMING_DIS),
+    CMD_SELECT_LNKE, CMD_WRITE_REG_B_CFG_SEC((CFG_SEC_DPU_SECURE_EN | CFG_SEC_DPU_MUTED_DIS)),
+    CMD_SELECT_NONE, CMD_NOP,
+    BUBBLE
+};
+
+/*
+ * DPU shall be numbered in a specific older (1,0,2,3,4,5,7,6)
+ * due to Local Interface constraints.
+*/
+const uint16_t init_dpu_id_seq[] =
+{
+    CMD_SELECT_FIRST, CMD_WRITE_REG_SET_ID(DPU_ID_1),
+    CMD_WRITE_REG_UNSELECT_FIRST, CMD_SELECT_FIRST,
+    CMD_WRITE_REG_SET_ID(DPU_ID_0), CMD_WRITE_REG_UNSELECT_FIRST,
+    CMD_SELECT_FIRST, CMD_WRITE_REG_SET_ID(DPU_ID_2),
+    CMD_WRITE_REG_UNSELECT_FIRST, CMD_SELECT_FIRST,
+    CMD_WRITE_REG_SET_ID(DPU_ID_3), CMD_WRITE_REG_UNSELECT_FIRST,
+    CMD_SELECT_FIRST, CMD_WRITE_REG_SET_ID(DPU_ID_4),
+    CMD_WRITE_REG_UNSELECT_FIRST, CMD_SELECT_FIRST,
+    CMD_WRITE_REG_SET_ID(DPU_ID_5), CMD_WRITE_REG_UNSELECT_FIRST,
+    CMD_SELECT_FIRST, CMD_WRITE_REG_SET_ID(DPU_ID_7),
+    CMD_WRITE_REG_UNSELECT_FIRST, CMD_SELECT_FIRST,
+    CMD_WRITE_REG_SET_ID(DPU_ID_6), CMD_WRITE_REG_UNSELECT_FIRST,
+    BUBBLE
+};
+
+
+uint16_t gi_set_spi_recovery_seq[] =
+{
+    CMD_SELECT_LNKE, CMD_WRITE_REG_A_SPI_RECOVERY(SPI_RECOVERY_516),
+    CMD_SELECT_NONE, CMD_NOP,
+    BUBBLE
+};
+
+/*
+* Ilink needs to close a cluster (word-signature, word-signature) in order to process a reading request,
+* if two reading are in the same cluster the second would overwrite the first result.
+* Build un-secure sequence with the same logic in order to make it as much as possible
+* portable to secure scenario (signatures are anyway missed)
+*/
+const uint16_t spi_gi_lnke_status_seq[] =
+{
+    CMD_GET_1RESULT_CHIP_ID_LSB, CMD_NOP,
+    CMD_GET_1RESULT_CHIP_ID_MSB, CMD_NOP,
+    CMD_GET_1RESULT_PLL_LOCK, CMD_NOP,
+    CMD_NOP, CMD_NOP,
+    BUBBLE
+};
+#define  CHIPID_MSB_ANSW_POS     (3)
+#define  CHIPID_LSB_ANSW_POS     (1)
+#define  PLL_LOCK_ANSW_POS       (5)
+
+/* Due to RECOVERY CTRL setting we need 4 + 512 BUBBLEs at max */
+const uint16_t bubble_seq[] = {
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
+    BUBBLE, BUBBLE, BUBBLE, BUBBLE
+};
+
+const uint16_t resume_seq[] = {
+    RESUME, BUBBLE
+};
+
+/* ------------------------------------
+ *  GI unsecure mode - functions defintion
+ * ------------------------------------
+*/
+
+static pilot_error_t GI_transfer(uint16_t ss_mask, uint16_t* seq, uint16_t* answ, uint16_t word_nr);
+static pilot_error_t check_answer(uint16_t *answ, uint32_t word_nr, uint32_t *valid_nr);
+uint16_t gi_tmp_buffer[];
+uint16_t spi_recovery_ignored_words_nr = 516;
+static pilot_error_t gi_set_spi_recovery (uint16_t ss_mask, uint16_t conf) {
+  uint16_t answ[sizeof(gi_set_spi_recovery_seq)/sizeof(uint16_t)];
+  pilot_error_t ret = PILOT_FAILURE;
+  uint16_t ignored_words_nr;
+
+  switch (conf) {
+    case(4):
+	gi_set_spi_recovery_seq[1] = CMD_WRITE_REG_A_SPI_RECOVERY(SPI_RECOVERY_4);
+	ignored_words_nr = 4;
+	break;
+    case(132):
+	gi_set_spi_recovery_seq[1] = CMD_WRITE_REG_A_SPI_RECOVERY(SPI_RECOVERY_132);
+	ignored_words_nr = 132;
+	break;
+    case(260):
+	gi_set_spi_recovery_seq[1] = CMD_WRITE_REG_A_SPI_RECOVERY(SPI_RECOVERY_260);
+	ignored_words_nr = 260;
+	break;
+    case(516):
+	gi_set_spi_recovery_seq[1] = CMD_WRITE_REG_A_SPI_RECOVERY(SPI_RECOVERY_516);
+	ignored_words_nr = 516;
+	break;
+    default:
+	gi_set_spi_recovery_seq[1] = CMD_WRITE_REG_A_SPI_RECOVERY(SPI_RECOVERY_516);
+	ignored_words_nr = 516;
+	break;
+  }
+
+  /* Configure the SPI recovery CNTR register */
+  if (GI_transfer(ss_mask, (uint16_t *)gi_set_spi_recovery_seq, answ, sizeof (gi_set_spi_recovery_seq)/sizeof(uint16_t)) == PILOT_SUCCESS) {
+	ret = PILOT_SUCCESS;
+	spi_recovery_ignored_words_nr = ignored_words_nr;
+  }
+  return ret;
+}
+
+static void gi_resume (uint16_t ss_mask) {
+  /* Send recovery frame */
+  if (
+      (SPI_GI_Transmit_Receive(ss_mask, (uint16_t *)bubble_seq, gi_tmp_buffer, spi_recovery_ignored_words_nr, SPI_TRANSFERT_MODE_BURST_BLOCKING) != PILOT_SUCCESS) ||
+      (SPI_GI_Transmit_Receive(ss_mask, (uint16_t *)resume_seq, gi_tmp_buffer, sizeof(resume_seq)/sizeof(uint16_t), SPI_TRANSFERT_MODE_BURST_BLOCKING) != PILOT_SUCCESS) ||
+      /* Only the last answer word is of interest, we don't need to check BUBBLE responses */
+      (check_answer(&gi_tmp_buffer[sizeof(resume_seq)/sizeof(uint16_t) - 1], 1, NULL) != PILOT_SUCCESS)
+  ){
+      Error_Handler();
+  }
+}
+
+static inline pilot_error_t gi_set_lnke_security(uint16_t ss_mask) {
+  return PILOT_SUCCESS;
+}
+
+#endif /* __GI_UNSEC_H__ */
