@@ -4,14 +4,13 @@
  *
  */
 
-#ifndef __GI_CMD_SEC_H__
-#define __GI_CMD_SEC_H__
+#ifndef __GI_SEC_H__
+#define __GI_SEC_H__
 
 /* ---------------------
  * Secure sequences
  * ---------------------
 */
-
 const uint16_t gi_cipher_en_seq [] = {
     0x5b00, 0x5800, 0x3aa4, 0x5f0b,
     0xfb74, 0xfbaf, 0x3c01, 0xfa19,
@@ -48,17 +47,13 @@ const uint16_t spi_gi_lnke_status_seq[] = {
     0xe0fc, 0xafc7, 0xf1aa, 0x5818,
     0x0000,
 };
-/*
- * The first answer word, related to the previous SPI sequence,
- * is not copied in the response buffer
-*/
 #define  CHIPID_MSB_ANSW_POS     (8)
 #define  CHIPID_LSB_ANSW_POS     (4)
 #define  PLL_LOCK_ANSW_POS       (12)
 
-/* ---------------------
- * Secure functions
- * ---------------------
+/* ------------------------------------
+ * GI secure mode - functions defintion
+ * ------------------------------------
 */
 static pilot_error_t GI_transfer(uint16_t ss_mask, uint16_t* seq, uint16_t* answ, uint16_t word_nr);
 static pilot_error_t gi_set_spi_recovery (uint16_t ss_mask, uint16_t conf) {
@@ -70,9 +65,9 @@ static inline pilot_error_t gi_set_lnke_security(uint16_t ss_mask) {
   return GI_transfer(ss_mask, (uint16_t *)gi_cipher_en_seq, answ, sizeof(gi_cipher_en_seq)/sizeof(uint16_t));
 }
 
-static void gi_resume () {
+static void gi_resume (uint16_t ss_mask) {
   /* We should never enter here */
   Error_Handler();
 }
 
-#endif /* __GI_CMD_H__ */
+#endif /* __GI_SEC_H__ */

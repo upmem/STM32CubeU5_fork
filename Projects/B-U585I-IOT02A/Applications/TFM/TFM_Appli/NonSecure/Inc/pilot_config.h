@@ -12,5 +12,5 @@
 #define  PILOT_LPDMA_IRQ_PRIORITY     (1)
 #define  PILOT_PENDSV_IRQ_PRIORITY    (7)
 
-//#define  PILOT_RTOS_SUPPORT
+#define  PILOT_RTOS_SUPPORT
 #endif

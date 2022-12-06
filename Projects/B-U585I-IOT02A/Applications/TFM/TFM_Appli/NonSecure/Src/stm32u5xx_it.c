@@ -25,7 +25,8 @@
 #include "pilot_config.h"
 #include "dma.h"
 #include "spi.h"
-
+#include "FreeRTOS.h"
+#include "task.h"
 /** @addtogroup USER_APP User App Example
   * @{
   */
@@ -170,10 +171,14 @@ void DebugMon_Handler(void)
   * @param  None
   * @retval None
   */
+extern void vPortSysTickHandler( void );
 void SysTick_Handler(void)
 {
 #ifdef PILOT_RTOS_SUPPORT
-  vPortSysTickHandler();
+  if( xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED )
+  {
+      vPortSysTickHandler();
+  }
 #endif
   HAL_IncTick();
 }

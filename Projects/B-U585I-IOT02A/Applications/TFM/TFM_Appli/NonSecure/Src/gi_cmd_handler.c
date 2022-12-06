@@ -10,13 +10,17 @@
 #include "spi.h"
 #include "system.h"
 #include "bitops.h"
+#include "gi_cmd.h"
 #ifdef GI_CIPHER_EN
 #define gi_cipher_en (1)
-#include "gi_cmd_sec.h"
+#include "gi_sec.h"
 #else
 #define gi_cipher_en (0)
-#include "gi_cmd.h"
+#include "gi_unsec.h"
 #endif
+#include "FreeRTOS.h"
+#include "task.h"
+#include "board_config.h"
 
 #ifdef DEBUG
 #define GI_DEBUG
@@ -28,28 +32,6 @@
 #define GI_TIMEOUT	(TIME_MS(10U)) /* 10 ms */
 #endif
 
-/* -------------------
- * Answer definition
- * -------------------
- * when PILOT transmits a 16-bits word on MOSI line through SPI interface,
- * the DPU-DRAM transmits at the same time a 16-bits answer on MISO line
- * whom the bitfield is described as follows:
- *
- * [15] Word Odd Parity Flag of previously received SPI word
- * [14] Word Odd Parity Flag of previously received SPI word
- * [13] Word Odd Parity Flag of previously received SPI word
- * [12] Result Valid Flag
- * [11] Result Valid Flag
- * [10] Result Valid Flag
- * [9] Reserved - 0b0
- * [8] Odd Parity Flag of Result data (RESULT[7:0])
- * [7:0] Result data (RESULT[7:0])
- */
-#define GI_RESPONSE_GET_PREVIOUS_ODD_FLAG(x) ((x & 0xE000) >> 13)
-#define GI_RESPONSE_GET_RESULT_VALID_FLAG(x) ((x & 0x1C00) >> 10)
-#define GI_RESPONSE_GET_RESERVED(x)          ((x & 0x0200) >> 9)
-#define GI_RESPONSE_GET_ODD_FLAG(x)          ((x & 0x0100) >> 8)
-#define GI_RESPONSE_GET_RESULT(x)            ((x & 0x00FF) >> 0)
 /*
  * NR of BUBBLEs needed to overcome the SPI latency
  * we should not check the response for the BUBBLE
@@ -195,4 +177,55 @@ pilot_error_t gi_check_lnke_status (uint16_t ss_mask) {
       ret = PILOT_SUCCESS;
     } while (0);
   return ret;
+}
+
+#define  MAILBOX_ANSW_DATA_POS       (1)
+pilot_error_t mailbox_read_write (uint16_t ss_mask, uint8_t dpu_wr_data, uint8_t host_wr_data, uint8_t* dpu_rd_data, uint8_t* host_rd_data) {
+  pilot_error_t ret = PILOT_FAILURE;
+  uint16_t mailbox_seq[] = {ESC_READ_WRITE_MAIL(host_wr_data, dpu_wr_data), ESC_NOP, BUBBLE};
+  uint16_t answ[COUNTOF(mailbox_seq)];
+  *dpu_rd_data = 0;
+  *host_rd_data = 0;
+  do {
+      if (GI_transfer(ss_mask, (uint16_t *)mailbox_seq, answ, COUNTOF(mailbox_seq)) != PILOT_SUCCESS) {
+        break;
+      }
+      if (popcount(GI_RESPONSE_GET_RESULT_VALID_FLAG(answ[MAILBOX_ANSW_DATA_POS])) < 2) {
+	  break;
+      }
+      *dpu_rd_data = MAILBOX_GET_DPU_DATA(GI_RESPONSE_GET_RESULT(answ[MAILBOX_ANSW_DATA_POS]));
+      *host_rd_data = MAILBOX_GET_HOST_DATA(GI_RESPONSE_GET_RESULT(answ[MAILBOX_ANSW_DATA_POS]));
+      ret = PILOT_SUCCESS;
+  } while (0);
+
+  return ret;
+}
+
+void mailbox_polling (void *pvParameters) {
+  uint8_t dpu_rd, host_rd;
+  uint8_t dpu_wr = 0 , host_wr = 0;
+  uint8_t dpu_rd_token = 0 , host_rd_token = 0;
+  uint8_t dpu_wr_token = 0 , host_wr_token = 0;
+  while(1) {
+    if (mailbox_read_write(DPU_DRAM_MASK_0, dpu_wr, host_wr, &dpu_rd, &host_rd) != PILOT_SUCCESS) {
+	// TODO call DPU-DRAM reset procedure;
+	Error_Handler();
+    }
+    if (dpu_rd_token != MAILBOX_GET_TOCKEN(dpu_rd)) {
+	dpu_rd_token = MAILBOX_GET_TOCKEN(dpu_rd);
+	dpu_wr_token = MAILBOX_INVERT_TOCKEN(dpu_wr_token);
+	dpu_wr = dpu_wr_token ;
+    }
+    if (host_rd_token != MAILBOX_GET_TOCKEN(host_rd)) {
+	host_rd_token = MAILBOX_GET_TOCKEN(host_rd);
+	host_wr_token = MAILBOX_INVERT_TOCKEN(host_wr_token);
+	host_wr =  host_wr_token ;
+    }
+    if (mailbox_read_write(DPU_DRAM_MASK_0, dpu_wr, host_wr, &dpu_rd, &host_rd)!= PILOT_SUCCESS) {
+	// TODO call DPU-DRAM reset procedure;
+	Error_Handler();
+    }
+    /* Move the task in the blocked state for 1ms */
+    vTaskDelay(pdMS_TO_TICKS( 1 ));
+  }
 }
