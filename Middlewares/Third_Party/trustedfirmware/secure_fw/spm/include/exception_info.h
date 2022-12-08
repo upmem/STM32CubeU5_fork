@@ -28,7 +28,7 @@
 /* This level of indirection is needed to fully resolve exception info when it's
  * a macro
  */
-//#define _STRINGIFY(exception_info) #exception_info
+#define _STRINGIFY(exception_info) #exception_info
 
 /* Store context for an exception, and print an error message with the context.
  *
