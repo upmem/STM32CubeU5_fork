@@ -7,6 +7,7 @@
 #ifndef __GI_UNSEC_H__
 #define __GI_UNSEC_H__
 #include "gi_cmd.h"
+#include "utils.h"
 
 /* -------------------
  * Unsecure Sequences
@@ -151,7 +152,7 @@ static pilot_error_t check_answer(uint16_t *answ, uint32_t word_nr, uint32_t *va
 uint16_t gi_tmp_buffer[];
 uint16_t spi_recovery_ignored_words_nr = 516;
 static pilot_error_t gi_set_spi_recovery (uint16_t ss_mask, uint16_t conf) {
-  uint16_t answ[sizeof(gi_set_spi_recovery_seq)/sizeof(uint16_t)];
+  uint16_t answ[COUNTOF(gi_set_spi_recovery_seq)];
   pilot_error_t ret = PILOT_FAILURE;
   uint16_t ignored_words_nr;
 
@@ -179,7 +180,7 @@ static pilot_error_t gi_set_spi_recovery (uint16_t ss_mask, uint16_t conf) {
   }
 
   /* Configure the SPI recovery CNTR register */
-  if (GI_transfer(ss_mask, (uint16_t *)gi_set_spi_recovery_seq, answ, sizeof (gi_set_spi_recovery_seq)/sizeof(uint16_t)) == PILOT_SUCCESS) {
+  if (GI_transfer(ss_mask, (uint16_t *)gi_set_spi_recovery_seq, answ, COUNTOF(gi_set_spi_recovery_seq)) == PILOT_SUCCESS) {
 	ret = PILOT_SUCCESS;
 	spi_recovery_ignored_words_nr = ignored_words_nr;
   }
@@ -190,9 +191,9 @@ static void gi_resume (uint16_t ss_mask) {
   /* Send recovery frame */
   if (
       (SPI_GI_Transmit_Receive(ss_mask, (uint16_t *)bubble_seq, gi_tmp_buffer, spi_recovery_ignored_words_nr, SPI_TRANSFERT_MODE_BURST_BLOCKING) != PILOT_SUCCESS) ||
-      (SPI_GI_Transmit_Receive(ss_mask, (uint16_t *)resume_seq, gi_tmp_buffer, sizeof(resume_seq)/sizeof(uint16_t), SPI_TRANSFERT_MODE_BURST_BLOCKING) != PILOT_SUCCESS) ||
+      (SPI_GI_Transmit_Receive(ss_mask, (uint16_t *)resume_seq, gi_tmp_buffer, COUNTOF(resume_seq), SPI_TRANSFERT_MODE_BURST_BLOCKING) != PILOT_SUCCESS) ||
       /* Only the last answer word is of interest, we don't need to check BUBBLE responses */
-      (check_answer(&gi_tmp_buffer[sizeof(resume_seq)/sizeof(uint16_t) - 1], 1, NULL) != PILOT_SUCCESS)
+      (check_answer(&gi_tmp_buffer[COUNTOF(resume_seq) - 1], 1, NULL) != PILOT_SUCCESS)
   ){
       Error_Handler();
   }

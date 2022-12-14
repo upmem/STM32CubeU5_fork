@@ -7,6 +7,7 @@
 #ifndef __GI_SEC_H__
 #define __GI_SEC_H__
 
+#include "utils.h"
 /* ---------------------
  * Secure sequences
  * ---------------------
@@ -61,8 +62,8 @@ static pilot_error_t gi_set_spi_recovery (uint16_t ss_mask, uint16_t conf) {
 }
 
 static inline pilot_error_t gi_set_lnke_security(uint16_t ss_mask) {
-  uint16_t answ[sizeof(gi_cipher_en_seq)/sizeof(uint16_t)];
-  return GI_transfer(ss_mask, (uint16_t *)gi_cipher_en_seq, answ, sizeof(gi_cipher_en_seq)/sizeof(uint16_t));
+  uint16_t answ[COUNTOF(gi_cipher_en_seq)];
+  return GI_transfer(ss_mask, (uint16_t *)gi_cipher_en_seq, answ, COUNTOF(gi_cipher_en_seq));
 }
 
 static void gi_resume (uint16_t ss_mask) {

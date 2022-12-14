@@ -44,7 +44,6 @@
 #define SPI_IGNORE_WORDS_516   (516)
 
 #define CHIP_ID_FPGA        (0x0515)
-#define COUNTOF(array) (sizeof(array)/sizeof(array[0]))
 
 uint16_t gi_tmp_buffer[512];
 
