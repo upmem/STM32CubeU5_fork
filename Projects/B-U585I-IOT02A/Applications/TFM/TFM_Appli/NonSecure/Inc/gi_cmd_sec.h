@@ -19,10 +19,6 @@ const uint16_t gi_cipher_en_seq [] = {
     0x0000
 };
 
-/*
- * DPU shall be numbered in a specific older (1,0,2,3,4,5,7,6)
- * due to Local Interface constraints.
-*/
 const uint16_t init_dpu_id_seq[] = {
     0x38c0, 0xe234, 0xcc8a, 0x89b7,
     0xd74f, 0x6aa1, 0x31bb, 0x8614,
@@ -65,7 +61,7 @@ const uint16_t spi_gi_lnke_status_seq[] = {
  * ---------------------
 */
 static pilot_error_t GI_transfer(uint16_t* seq, uint16_t* answ, uint16_t word_nr);
-static pilot_error_t gi_set_spi_recovery (uint8_t conf) {
+static pilot_error_t gi_set_spi_recovery (uint16_t conf) {
   return PILOT_SUCCESS;
 }
 
