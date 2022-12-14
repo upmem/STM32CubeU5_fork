@@ -15,7 +15,7 @@
 #define  PILOT_GPDMA_IRQ_PRIORITY     (1)
 #define  PILOT_LPDMA_IRQ_PRIORITY     (1)
 
-/* Lowest priority to ensure that the context is switched only once in case of nester interrupts*/
+/* Lowest priority to ensure that the context is switched only once in case of nested interrupts*/
 #define  PILOT_PENDSV_IRQ_PRIORITY    (PILOT_PRIORITY_LOWEST)
 
 #define  PILOT_RTOS_SUPPORT
