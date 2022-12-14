@@ -9,6 +9,8 @@
 #include "stdio.h"
 #include "board_config.h"
 
+#include "FreeRTOS.h"
+#include "semphr.h"
 SPI_HandleTypeDef handle_SPI_1;
 SPI_HandleTypeDef handle_SPI_3;
 #ifdef DEBUG
@@ -19,6 +21,9 @@ SPI_HandleTypeDef handle_SPI_3;
  * Reset hold time should be at least superior to 2x DPU Period = 3.2µs
  */
 #define HARDWARE_RESET_HOLD_TIME_MS (1)
+
+static SemaphoreHandle_t spi1_mutex;
+
 
 /**
   * @brief SPI1 Initialization Function
@@ -72,7 +77,10 @@ static void MX_SPI1_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN SPI1_Init 2 */
-
+  spi1_mutex = xSemaphoreCreateMutex();
+  if (spi1_mutex == NULL) {
+    Error_Handler();
+  }
   /* USER CODE END SPI1_Init 2 */
 
 }
@@ -210,6 +218,7 @@ pilot_error_t SPI_GI_Transmit_Receive(uint16_t ss_mask, uint16_t* tx_buf, uint16
   uint16_t i;
   pilot_error_t err = PILOT_FAILURE;
   HAL_StatusTypeDef status = HAL_ERROR;
+  xSemaphoreTake(spi1_mutex, portMAX_DELAY );
 
   switch(mode)
   {
@@ -260,6 +269,7 @@ pilot_error_t SPI_GI_Transmit_Receive(uint16_t ss_mask, uint16_t* tx_buf, uint16
   }
 
   SPI_debug (tx_buf, rx_buf, len, mode, status);
+  xSemaphoreGive(spi1_mutex);
 
   if (status == HAL_OK) {
     err = PILOT_SUCCESS;

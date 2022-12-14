@@ -38,6 +38,7 @@ __asm("  .global __ARM_use_no_argv\n");
 /* FreeRTOS includes */
 #include "FreeRTOS.h"
 #include "task.h"
+#include "queue.h"
 
 #include "commit.h"
 
@@ -54,31 +55,17 @@ __asm("  .global __ARM_use_no_argv\n");
 #include "tfm_ns_interface.h"
 /* Temporary includes */
 #include "crypto_tests_common.h"
-/** @defgroup  USER_APP  exported variable
-   * @{
-  */
+
+QueueHandle_t host_requests_queue = NULL;
+
+
 #ifdef __ICCARM__
 __no_init volatile uint32_t TestNumber;
 #else
 volatile uint32_t TestNumber  __attribute__((section(".bss.NoInit"))) ;
 #endif /* __ICCARM__ */
-/** @addtogroup USER_APP User App Example
-  * @{
-  */
-
-
-/** @addtogroup USER_APP_COMMON Common
-  * @{
-  */
-
-/* Private typedef -----------------------------------------------------------*/
-/* Private define ------------------------------------------------------------*/
 
 #define USER_APP_NBLINKS  ((uint8_t) 1U)
-/* Private macro -------------------------------------------------------------*/
-/* Private variables ---------------------------------------------------------*/
-
-/* Private function prototypes -----------------------------------------------*/
 static void uart_putc(unsigned char c)
 {
   COM_Transmit(&c, 1, 1000U);
@@ -196,17 +183,17 @@ static void RTOS_Init(void) {
   /* PendSV_IRQn interrupt configuration */
   HAL_NVIC_SetPriority( PendSV_IRQn, PILOT_PENDSV_IRQ_PRIORITY, 0 );
 
-  // Create mutex before starting tasks
-  //mutex = xSemaphoreCreateMutex();
+  host_requests_queue = xQueueCreate( 10, sizeof(uint32_t));
 
-  /* tasks */
-  //xTaskCreate(my_first_task, "my first task", configMINIMAL_STACK_SIZE, NULL, 2, NULL);
-  //xTaskCreate(my_second_task, "my second task", configMINIMAL_STACK_SIZE, NULL, 1, NULL);
-
-  if (xTaskCreate(mailbox_polling, "mailbox_polling", configMINIMAL_STACK_SIZE, NULL, 1, NULL) != pdPASS) {
+  if (xTaskCreate(mailbox_polling, "mailbox_polling", configMINIMAL_STACK_SIZE, NULL, 50, NULL) != pdPASS) {
       Error_Handler();
   }
-
+  if (xTaskCreate(dpu_load, "dpu loading with facsimile", configMINIMAL_STACK_SIZE, NULL, 2, NULL) != pdPASS) {
+      Error_Handler();
+  }
+  if (xTaskCreate(fake_request, "trigger a fake host request", configMINIMAL_STACK_SIZE, NULL, 50, NULL) != pdPASS) {
+      Error_Handler();
+  }
   /* Start scheduler */
   vTaskStartScheduler();
   /* we should never reach here */

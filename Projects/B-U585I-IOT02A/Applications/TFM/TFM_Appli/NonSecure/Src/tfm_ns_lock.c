@@ -17,7 +17,7 @@
 #define vprintf(...)
 #endif
 
-static SemaphoreHandle_t tfm_mutex;
+static SemaphoreHandle_t tfm_mutex = NULL;
 
 /**
   * \brief NS world, NS lock based dispatcher
@@ -28,7 +28,6 @@ int32_t tfm_ns_interface_dispatch(veneer_fn fn,
 {
   vprintf("tfm_ns_interface_dispatch\r\n");
   uint32_t ret = PSA_ERROR_GENERIC_ERROR;
-
   if (xSemaphoreTake(tfm_mutex, portMAX_DELAY) == pdTRUE) {
 	  ret = (uint32_t)fn(arg0, arg1, arg2, arg3);
 	  xSemaphoreGive(tfm_mutex);
@@ -39,6 +38,7 @@ int32_t tfm_ns_interface_dispatch(veneer_fn fn,
 enum tfm_status_e tfm_ns_interface_init(void)
 {
   enum tfm_status_e status = TFM_ERROR_GENERIC;
+
   tfm_mutex = xSemaphoreCreateMutex();
   if (tfm_mutex != NULL) {
     status = TFM_SUCCESS;
