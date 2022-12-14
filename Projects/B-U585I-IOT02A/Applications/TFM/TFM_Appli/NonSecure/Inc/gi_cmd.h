@@ -19,6 +19,7 @@
 #define WORD_CMD_6	(0x6 << 12)
 #define WORD_CMD_7	(0x7 << 12)
 #define WORD_CMD_C	(0xC << 12)
+#define WORD_CMD_A	(0xA << 12)
 #define WORD_CMD_E	(0xE << 12)
 
 #define WORD_ESC_5	(0x5 << 12)
@@ -79,6 +80,7 @@
 #define CMD_SELECT_FIRST 		(SET_AB(WORD_CMD_3 | CMD_SELECT_MODE_FIRST))
 #define CMD_SELECT_ID(dpu_id)		(SET_AB(WORD_CMD_3 | CMD_SELECT_MODE_ID, | dpu_id))
 #define CMD_SELECT_LNKE 		(SET_AB(WORD_CMD_3 | CMD_SELECT_MODE_LNKE))
+#define CMD_SELECT_ALL	 		(SET_AB(WORD_CMD_3 | CMD_SELECT_MODE_ALL))
 
 
 /* CMD WRITE_REG */
@@ -112,6 +114,9 @@
 #define RESUME				(WORD_CMD_E)
 #define BUBBLE				(0)
 
+/* CMD INSTRUCTION */
+#define CMD_INSTRUCTION(data)		(SET_MSB_PARITY(WORD_CMD_A | (data & 0xFFF)))
+
 /* ESC INIT_KEY */
 #define ESC_INIT_KEY_PRIMING_DIS	(0 << 0)
 #define ESC_INIT_KEY_PRIMING_EN		(0 << 1)
@@ -130,6 +135,8 @@
 #define MAILBOX_GET_TOCKEN(answ_data)	(answ_data & 0x8)
 #define MAILBOX_INVERT_TOCKEN(data)	((data ^ 0x8) & 0x8)
 
+/* ESC SELECT */
+#define ESC_SELECT(dpu_id)			(SET_AB(WORD_ESC_5 | dpu_id))
 
 /* -------------------
  * Answer definition

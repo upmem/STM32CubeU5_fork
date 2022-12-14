@@ -21,6 +21,7 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "board_config.h"
+#include "queue.h"
 
 #ifdef DEBUG
 #define GI_DEBUG
@@ -45,7 +46,10 @@
 
 #define CHIP_ID_FPGA        (0x0515)
 
-uint16_t gi_tmp_buffer[512];
+#define SPI_MAX_BUF_SIZE	(512)
+uint16_t gi_tmp_buffer[SPI_MAX_BUF_SIZE];
+uint16_t common_answ_buffer[SPI_MAX_BUF_SIZE];
+extern QueueHandle_t host_requests_queue;
 
 static void print_gi_word(uint16_t word)
 {
@@ -134,7 +138,7 @@ pilot_error_t gi_init (uint16_t ss_mask) {
 	break;
       }
     } else {
-      if (gi_set_spi_recovery(ss_mask, SPI_IGNORE_WORDS_132) != PILOT_SUCCESS){
+      if (gi_set_spi_recovery(ss_mask, SPI_IGNORE_WORDS_516) != PILOT_SUCCESS){
 	break;
       }
     }
@@ -178,10 +182,14 @@ pilot_error_t gi_check_lnke_status (uint16_t ss_mask) {
   return ret;
 }
 
-#define  MAILBOX_ANSW_DATA_POS       (1)
-pilot_error_t mailbox_read_write (uint16_t ss_mask, uint8_t dpu_wr_data, uint8_t host_wr_data, uint8_t* dpu_rd_data, uint8_t* host_rd_data) {
+#define  MAILBOX_ANSW_DATA_POS       (3)
+pilot_error_t mailbox_read_write (uint16_t ss_mask, uint8_t dpu_id, uint8_t dpu_wr_data, uint8_t host_wr_data, uint8_t* dpu_rd_data, uint8_t* host_rd_data) {
   pilot_error_t ret = PILOT_FAILURE;
-  uint16_t mailbox_seq[] = {ESC_READ_WRITE_MAIL(host_wr_data, dpu_wr_data), ESC_NOP, BUBBLE};
+  uint16_t mailbox_seq[] = {
+      ESC_SELECT(dpu_id), ESC_NOP,
+      ESC_READ_WRITE_MAIL(host_wr_data, dpu_wr_data), ESC_NOP,
+      BUBBLE
+  };
   uint16_t answ[COUNTOF(mailbox_seq)];
   *dpu_rd_data = 0;
   *host_rd_data = 0;
@@ -206,25 +214,64 @@ void mailbox_polling (void *pvParameters) {
   uint8_t dpu_rd_token = 0 , host_rd_token = 0;
   uint8_t dpu_wr_token = 0 , host_wr_token = 0;
   while(1) {
-    if (mailbox_read_write(DPU_DRAM_MASK_0, dpu_wr, host_wr, &dpu_rd, &host_rd) != PILOT_SUCCESS) {
-	// TODO call DPU-DRAM reset procedure;
-	Error_Handler();
-    }
-    if (dpu_rd_token != MAILBOX_GET_TOCKEN(dpu_rd)) {
-	dpu_rd_token = MAILBOX_GET_TOCKEN(dpu_rd);
-	dpu_wr_token = MAILBOX_INVERT_TOCKEN(dpu_wr_token);
-	dpu_wr = dpu_wr_token ;
-    }
-    if (host_rd_token != MAILBOX_GET_TOCKEN(host_rd)) {
-	host_rd_token = MAILBOX_GET_TOCKEN(host_rd);
-	host_wr_token = MAILBOX_INVERT_TOCKEN(host_wr_token);
-	host_wr =  host_wr_token ;
-    }
-    if (mailbox_read_write(DPU_DRAM_MASK_0, dpu_wr, host_wr, &dpu_rd, &host_rd)!= PILOT_SUCCESS) {
-	// TODO call DPU-DRAM reset procedure;
-	Error_Handler();
+    for (uint8_t dpu_id = 0; dpu_id < DPU_NR; dpu_id++) {
+      if (mailbox_read_write(DPU_DRAM_MASK_0, dpu_id, dpu_wr, host_wr, &dpu_rd, &host_rd) != PILOT_SUCCESS) {
+	  // TODO call DPU-DRAM reset procedure;
+	  Error_Handler();
+      }
+      if (dpu_rd_token != MAILBOX_GET_TOCKEN(dpu_rd)) {
+	  dpu_rd_token = MAILBOX_GET_TOCKEN(dpu_rd);
+	  dpu_wr_token = MAILBOX_INVERT_TOCKEN(dpu_wr_token);
+	  dpu_wr = dpu_wr_token ;
+      }
+      if (host_rd_token != MAILBOX_GET_TOCKEN(host_rd)) {
+	  host_rd_token = MAILBOX_GET_TOCKEN(host_rd);
+	  host_wr_token = MAILBOX_INVERT_TOCKEN(host_wr_token);
+	  host_wr =  host_wr_token ;
+      }
+      if (mailbox_read_write(DPU_DRAM_MASK_0, dpu_id, dpu_wr, host_wr, &dpu_rd, &host_rd)!= PILOT_SUCCESS) {
+	  // TODO call DPU-DRAM reset procedure;
+	  Error_Handler();
+      }
     }
     /* Move the task in the blocked state for 1ms */
     vTaskDelay(pdMS_TO_TICKS( 1 ));
   }
 }
+
+void fake_request (void *pvParameters) {
+  /* Move the task in the blocked state for 5s */
+  vTaskDelay(pdMS_TO_TICKS( 5000 ));
+  /* test fake message queueuing */
+  uint32_t* fake_request = pvPortMalloc(sizeof(uint32_t));
+  *fake_request = 0x87654321;
+  if (xQueueSendToBack(host_requests_queue, &fake_request, 0) != pdPASS) {
+    /* Could not send to the queue */
+    Error_Handler();
+  }
+  vTaskSuspend(NULL);
+}
+
+void dpu_load (void *pvParameters) {
+  pilot_error_t status = PILOT_FAILURE;
+  uint32_t len = COUNTOF(secure_loader_facsimile);
+  uint32_t offset = 0;
+  uint32_t *request = 0;
+  while(1) {
+    xQueueReceive( host_requests_queue, &request, portMAX_DELAY);
+    printf ("request 0x%x\r\n",*request);
+    vPortFree((void *)request);
+    while (len/SPI_MAX_BUF_SIZE) {
+	status = GI_transfer(DPU_DRAM_MASK_0, (uint16_t *)&secure_loader_facsimile[offset], common_answ_buffer, SPI_MAX_BUF_SIZE);
+	if (status != PILOT_SUCCESS) {
+	    break;
+	}
+	len -= SPI_MAX_BUF_SIZE;
+	offset += SPI_MAX_BUF_SIZE;
+    }
+    if (status == PILOT_SUCCESS) {
+	GI_transfer(DPU_DRAM_MASK_0, (uint16_t *)&secure_loader_facsimile[offset], common_answ_buffer, len);
+    }
+  }
+}
+
