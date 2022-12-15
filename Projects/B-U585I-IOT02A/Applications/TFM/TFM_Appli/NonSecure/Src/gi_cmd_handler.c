@@ -17,7 +17,6 @@
 #define gi_cipher_en (0)
 #include "gi_cmd.h"
 #endif
-#include "board_config.h"
 
 #ifdef DEBUG
 #define GI_DEBUG
