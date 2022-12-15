@@ -49,6 +49,7 @@ __asm("  .global __ARM_use_no_argv\n");
 
 
 #include "pilot_config.h"
+#include "board_config.h"
 
 #include "tfm_ns_interface.h"
 /* Temporary includes */
@@ -177,9 +178,10 @@ int main(int argc, char **argv)
   }
 
   if (
-      (gi_init() != PILOT_SUCCESS) ||
-      (gi_check_lnke_status() != PILOT_SUCCESS)
+      (gi_init(DPU_DRAM_MASK_0) != PILOT_SUCCESS) ||
+      (gi_check_lnke_status(DPU_DRAM_MASK_0) != PILOT_SUCCESS)
       ) {
+      // TODO : do this for all SS pins in real HW.
       Error_Handler();
   }
   printf ("Non-secure image init all good\r\n");

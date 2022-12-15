@@ -285,8 +285,7 @@ void SPI_Com_Complete(SPI_HandleTypeDef *hspi)
 
   if (hspi == &handle_SPI_1)
   {
-    /* Set Chip Select High */
-    // TODO : handle 16 different ChipSelect ?
+    /* Set All Chip Select High */
     set_ss(DPU_DRAM_MASK_ALL, GPIO_PIN_RESET);
   }
 }

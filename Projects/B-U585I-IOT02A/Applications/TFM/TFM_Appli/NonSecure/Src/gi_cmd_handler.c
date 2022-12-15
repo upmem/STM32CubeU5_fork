@@ -109,7 +109,7 @@ static pilot_error_t check_answer(uint16_t *answ, uint32_t word_nr, uint32_t *va
  * - Answer words related to transmission errors are not copied to the answ buffer
  * - The first answer word, related to the previous sequence, is not copied to the answ buffer
 */
-static pilot_error_t GI_transfer(uint16_t* seq, uint16_t* answ, uint16_t word_nr) {
+static pilot_error_t GI_transfer(uint16_t ss_mask, uint16_t* seq, uint16_t* answ, uint16_t word_nr) {
   pilot_error_t ret = PILOT_FAILURE;
   uint32_t valid_nr = 0;
   uint32_t timestamp = get_timestamp();
@@ -117,7 +117,7 @@ static pilot_error_t GI_transfer(uint16_t* seq, uint16_t* answ, uint16_t word_nr
   do {
     if (error) {
 	/* Send BUBBLEs in accordance to RECOVERY CTRL register */
-	gi_resume();
+	gi_resume(ss_mask);
 	error = 0;
     }
     /* Send words over SPI */
@@ -144,7 +144,7 @@ static pilot_error_t GI_transfer(uint16_t* seq, uint16_t* answ, uint16_t word_nr
   return ret;
 }
 
-pilot_error_t gi_init (void) {
+pilot_error_t gi_init (uint16_t ss_mask) {
   uint16_t answ[COUNTOF(init_dpu_id_seq)];
   pilot_error_t ret = PILOT_FAILURE;
   do {
@@ -154,11 +154,11 @@ pilot_error_t gi_init (void) {
 	break;
       }
     } else {
-      if (gi_set_spi_recovery(SPI_IGNORE_WORDS_132) != PILOT_SUCCESS){
+      if (gi_set_spi_recovery(ss_mask, SPI_IGNORE_WORDS_132) != PILOT_SUCCESS){
 	break;
       }
     }
-    if (GI_transfer((uint16_t *)init_dpu_id_seq, answ, COUNTOF(init_dpu_id_seq)) != PILOT_SUCCESS) {
+    if (GI_transfer(ss_mask, (uint16_t *)init_dpu_id_seq, answ, COUNTOF(init_dpu_id_seq)) != PILOT_SUCCESS) {
 	break;
     }
     ret = PILOT_SUCCESS;
@@ -167,6 +167,7 @@ pilot_error_t gi_init (void) {
   return ret;
 }
 
+#if 0
 pilot_error_t gi_cfg_spi_slave (uint16_t ss_mask, uint16_t config) {
   uint16_t answ[COUNTOF(gi_cfg_spi_slave_seq) - SPI_DRAIN_BUBBLE_NR]; /* NOP doesn't have responses */
   pilot_error_t ret = PILOT_FAILURE;
@@ -210,8 +211,9 @@ pilot_error_t gi_get_cfg_pll_misc (uint16_t ss_mask, uint16_t* pll_misc) {
     } while (0);
   return ret;
 }
+#endif
 
-pilot_error_t gi_check_lnke_status (void) {
+pilot_error_t gi_check_lnke_status (uint16_t ss_mask) {
   uint16_t answ[COUNTOF(spi_gi_lnke_status_seq)];
   uint16_t chip_id = 0;
   uint16_t pll_lock = 0;
@@ -219,7 +221,7 @@ pilot_error_t gi_check_lnke_status (void) {
 
   do {
       /* read the LNKE status registers*/
-      if ((GI_transfer((uint16_t*)spi_gi_lnke_status_seq, answ, COUNTOF(spi_gi_lnke_status_seq)) == PILOT_FAILURE) ||
+      if ((GI_transfer(ss_mask, (uint16_t*)spi_gi_lnke_status_seq, answ, COUNTOF(spi_gi_lnke_status_seq)) == PILOT_FAILURE) ||
           /* Verify there are valid results in the appropriate answer words */
 	  (popcount(GI_RESPONSE_GET_RESULT_VALID_FLAG(answ[CHIPID_MSB_ANSW_POS])) < 2) ||
 	  (popcount(GI_RESPONSE_GET_RESULT_VALID_FLAG(answ[CHIPID_LSB_ANSW_POS])) < 2) ||
