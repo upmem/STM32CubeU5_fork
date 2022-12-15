@@ -167,52 +167,6 @@ pilot_error_t gi_init (uint16_t ss_mask) {
   return ret;
 }
 
-#if 0
-pilot_error_t gi_cfg_spi_slave (uint16_t ss_mask, uint16_t config) {
-  uint16_t answ[COUNTOF(gi_cfg_spi_slave_seq) - SPI_DRAIN_BUBBLE_NR]; /* NOP doesn't have responses */
-  pilot_error_t ret = PILOT_FAILURE;
-
-  do {
-    gi_cfg_spi_slave_seq[CFG_SPI_SLAVE_CMD_POS] = CMD_WRITE_REG_A_CFG_SPI_SLAVE(config);
-    if (GI_transfer(ss_mask, (uint16_t *)gi_cfg_spi_slave_seq, answ, COUNTOF(gi_cfg_spi_slave_seq)) == PILOT_FAILURE)
-      break;
-    ret = PILOT_SUCCESS;
-  } while (0);
-  return ret;
-}
-
-pilot_error_t gi_set_cfg_pll_misc (uint16_t ss_mask, uint16_t config) {
-  uint16_t answ[COUNTOF(gi_set_cfg_pll_misc_seq) - SPI_DRAIN_BUBBLE_NR]; /* NOP doesn't have responses */
-  pilot_error_t ret = PILOT_FAILURE;
-
-  do {
-    gi_set_cfg_pll_misc_seq[CFG_PLL_MISC_CMD_POS] = CMD_WRITE_REG_A_CFG_PLL_MISC(config);
-    if (GI_transfer(ss_mask, (uint16_t *)gi_set_cfg_pll_misc_seq, answ, COUNTOF(gi_set_cfg_pll_misc_seq)) == PILOT_FAILURE)
-      break;
-    ret = PILOT_SUCCESS;
-  } while (0);
-  return ret;
-}
-
-pilot_error_t gi_get_cfg_pll_misc (uint16_t ss_mask, uint16_t* pll_misc) {
-  uint16_t answ[COUNTOF(gi_get_cfg_pll_misc_seq) - SPI_DRAIN_BUBBLE_NR]; /* NOP doesn't have responses */
-  pilot_error_t ret = PILOT_FAILURE;
-
-  do {
-      /* read the LNKE status registers*/
-      if ((GI_transfer(ss_mask, (uint16_t*)gi_get_cfg_pll_misc_seq, answ, COUNTOF(gi_get_cfg_pll_misc_seq)) == PILOT_FAILURE) ||
-          /* Verify there are valid results in the appropriate answer words */
-    (popcount(GI_RESPONSE_GET_RESULT_VALID_FLAG(answ[CFG_PLL_MISC_ANSW_POS])) < 2)
-         ){
-    break;
-      }
-      *pll_misc = GI_RESPONSE_GET_RESULT(answ[CFG_PLL_MISC_ANSW_POS]);
-      ret = PILOT_SUCCESS;
-    } while (0);
-  return ret;
-}
-#endif
-
 pilot_error_t gi_check_lnke_status (uint16_t ss_mask) {
   uint16_t answ[COUNTOF(spi_gi_lnke_status_seq)];
   uint16_t chip_id = 0;
@@ -243,4 +197,3 @@ pilot_error_t gi_check_lnke_status (uint16_t ss_mask) {
     } while (0);
   return ret;
 }
-
