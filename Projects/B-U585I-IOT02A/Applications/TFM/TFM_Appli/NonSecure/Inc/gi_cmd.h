@@ -103,28 +103,7 @@
 #define CFG_SEC_DPU_REG_EN			(0x1 << 2)
 #define CFG_SEC_DPU_MUTED_DIS			(0x1 << 3)
 #define CFG_SEC_DPU_SECURE_EN			(0x1 << 4)
-
 #define CMD_WRITE_REG_B_CFG_SEC(cfg) (SET_MSB_PARITY(WORD_CMD_E | CMD_WRITE_REG_B_ADDR_CFG_SEC | (cfg & 0x1f)))
-
-/* PLL */
-#define PLL_DIVIDER_DIV1  (0x0)
-#define PLL_DIVIDER_DIV2  (0x1)
-#define PLL_DIVIDER_DIV4  (0x2)
-#define PLL_DIVIDER_DIV8  (0x3)
-#define PLL_ENABLE        (0x1 << 2)
-#define PLL_DISABLE       (0x0 << 2)
-
-#define CMD_WRITE_REG_ADDR_CFG_PLL_MISC   (0x2 << 8)
-#define CMD_WRITE_REG_A_CFG_PLL_MISC(x)   (SET_MSB_PARITY(WORD_CMD_C | CMD_WRITE_REG_ADDR_CFG_PLL_MISC | (x & 0x07)))
-
-/* SPI SLAVE */
-#define SPI_HW_RESET_ENABLE   (0x1 << 4)
-#define SPI_HW_RESET_DISABLE  (0x0 << 4)
-#define SPI_RX_SOON_0         (0x0) /* TODO : add other possibilities */
-
-#define CMD_WRITE_REG_ADDR_CFG_SPI_SLAVE  (0x3 << 8)
-#define CMD_WRITE_REG_A_CFG_SPI_SLAVE(x)  (SET_MSB_PARITY(WORD_CMD_C | CMD_WRITE_REG_ADDR_CFG_SPI_SLAVE | (x & 0x1F)))
-
 
 /* CMD NOP */
 #define CMD_NOP				(WORD_CMD_E)
@@ -184,27 +163,6 @@ uint16_t gi_set_spi_recovery_seq[] =
     CMD_SELECT_NONE, CMD_NOP,
     BUBBLE
 };
-
-// not const since configuration can change
-uint16_t gi_cfg_spi_slave_seq[] = {
-    CMD_SELECT_LNKE, CMD_WRITE_REG_A_CFG_SPI_SLAVE((SPI_HW_RESET_DISABLE | SPI_RX_SOON_0)),
-    CMD_SELECT_NONE, CMD_NOP,
-    BUBBLE
-};
-
-// not const since configuration can change
-uint16_t gi_set_cfg_pll_misc_seq[] = {
-    CMD_SELECT_LNKE, CMD_WRITE_REG_A_CFG_PLL_MISC((PLL_DISABLE | PLL_DIVIDER_DIV8)),
-    CMD_SELECT_NONE, CMD_NOP,
-    BUBBLE
-};
-
-#if 0
-const uint16_t gi_get_cfg_pll_misc_seq[] = {
-    CMD_GET_1RESULT_CFG_PLL_MISC, CMD_NOP,
-    BUBBLE
-};
-#endif
 
 /*
 * Ilink needs to close a cluster (word-signature, word-signature) in order to process a reading request,
@@ -361,5 +319,6 @@ static void gi_resume (uint16_t ss_mask) {
 static inline pilot_error_t gi_set_lnke_security(void) {
   return PILOT_SUCCESS;
 }
+
 
 #endif /* __GI_CMD_H__ */

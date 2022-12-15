@@ -9,8 +9,5 @@
 
 pilot_error_t gi_init (uint16_t ss_mask);
 pilot_error_t gi_check_lnke_status (uint16_t ss_mask);
-pilot_error_t gi_cfg_spi_slave (uint16_t ss_mask, uint16_t config);
-pilot_error_t gi_set_cfg_pll_misc (uint16_t ss_mask, uint16_t config);
-pilot_error_t gi_get_cfg_pll_misc (uint16_t ss_mask, uint16_t* pll_misc);
 
 #endif
