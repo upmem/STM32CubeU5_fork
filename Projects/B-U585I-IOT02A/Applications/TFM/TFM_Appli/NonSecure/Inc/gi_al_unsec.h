@@ -69,7 +69,7 @@ static const uint16_t spi_gi_lnke_status_seq[] =
 #define  PLL_LOCK_ANSW_POS       (6)
 
 /* Due to RECOVERY CTRL setting we need 4 + 512 BUBBLEs at max */
-static const uint16_t bubble_seq[] = {
+static const uint16_t bubble_seq[SPI_MAX_BUF_SIZE] = {
     BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
     BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
     BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE, BUBBLE,
