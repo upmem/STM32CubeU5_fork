@@ -9,6 +9,24 @@
 
 #include "bitops.h"
 
+pilot_error_t check_answer(uint16_t *answ, uint32_t word_nr, uint32_t *valid_nr);
+#ifdef DEBUG
+#define GI_DEBUG
+#endif
+/* ---------------
+ * Defines
+ * --------------
+ */
+
+#define SPI_MAX_BUF_SIZE	(512)
+/*
+ * NR of BUBBLEs needed to overcome the SPI latency
+ * we should not check the response for the BUBBLE
+*/
+#define SPI_DRAIN_BUBBLE_NR	(1)
+
+#define CHIP_ID_FPGA        (0x0515)
+
 /* -------------------
  * Words definition
  * -------------------
