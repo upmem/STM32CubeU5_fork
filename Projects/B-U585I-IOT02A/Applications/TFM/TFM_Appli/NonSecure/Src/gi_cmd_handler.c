@@ -37,6 +37,7 @@ static void print_gi_word(uint16_t word)
 }
 
 pilot_error_t check_answer(uint16_t *answ, uint32_t word_nr, uint32_t *valid_nr){
+  /* Check for errors in the answer */
   pilot_error_t ret = PILOT_SUCCESS;
   if (valid_nr != NULL){
       *valid_nr = 0;
@@ -126,6 +127,10 @@ pilot_error_t mailbox_read_write (uint16_t ss_mask, uint8_t dpu_id, uint8_t dpu_
   return ret;
 }
 
+/*
+ * This function is an inital draft of the MAILBOX protocol:
+ * In case of Host/DPU has toggled the rd tocken, Pilot reads the related data and toggles the wr tocken
+ */
 void gi_task_mailbox_polling (void *pvParameters) {
   uint8_t dpu_rd, host_rd;
   uint8_t dpu_wr = 0 , host_wr = 0;
@@ -157,10 +162,13 @@ void gi_task_mailbox_polling (void *pvParameters) {
   }
 }
 
+/* This function emulates a request event (via mailbox/usb/smb)
+ * when a request arrives its content is copied in a buffer whose pointer is put in the request queue
+ */
 void gi_task_fake_request (void *pvParameters) {
   /* Move the task in the blocked state for 5s */
   vTaskDelay(pdMS_TO_TICKS( 5000 ));
-  /* test fake message queueuing */
+  /* Test fake message queueuing */
   uint32_t* fake_request = pvPortMalloc(sizeof(uint32_t));
   *fake_request = 0x87654321;
   if (xQueueSendToBack(host_requests_queue, &fake_request, 0) != pdPASS) {
@@ -170,6 +178,7 @@ void gi_task_fake_request (void *pvParameters) {
   vTaskSuspend(NULL);
 }
 
+/* This function loads a fake binary on all the DPU IRAMs of the given DPU-DRAM */
 void gi_task_dpu_load (void *pvParameters) {
   pilot_error_t status = PILOT_FAILURE;
   uint32_t len = COUNTOF(secure_loader_facsimile);
