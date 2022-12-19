@@ -4,22 +4,29 @@
  *
  */
 
-#ifndef __GI_SEC_H__
-#define __GI_SEC_H__
+#ifndef __GI_AL_SEC_H__
+#define __GI_AL_SEC_H__
 
 #include "utils.h"
+
+/* --------------------
+ * function prototypes
+ * --------------------
+ */
+pilot_error_t gi_al_init(uint16_t ss_mask);
+pilot_error_t gi_al_transfer(uint16_t ss_mask, uint16_t* seq, uint16_t* answ, uint16_t word_nr);
 /* ---------------------
  * Secure sequences
  * ---------------------
 */
-const uint16_t gi_cipher_en_seq [] = {
+static const uint16_t gi_cipher_en_seq [] = {
     0x5b00, 0x5800, 0x3aa4, 0x5f0b,
     0xfb74, 0xfbaf, 0x3c01, 0xfa19,
     0xfb3c, 0xba2e,
     0x0000
 };
 
-const uint16_t init_dpu_id_seq[] = {
+static const uint16_t init_dpu_id_seq[] = {
     0x38c0, 0xe234, 0xcc8a, 0x89b7,
     0xd74f, 0x6aa1, 0x31bb, 0x8614,
     0xd2f1, 0x4ffc, 0xc3f4, 0x4b01,
@@ -41,37 +48,24 @@ const uint16_t init_dpu_id_seq[] = {
 * Build un-secure sequence with the same logic in order to make it as much as possible
 * portable to secure scenario (signatures are anyway missed)
 */
-const uint16_t spi_gi_lnke_status_seq[] = {
+static const uint16_t spi_gi_lnke_status_seq[] = {
     0x1f9a, 0x65a4, 0xea18, 0x7672,
     0x1475, 0x2734, 0xe3a6, 0x4bab,
     0x1fa3, 0xca75, 0xf463, 0x6073,
     0xe0fc, 0xafc7, 0xf1aa, 0x5818,
     0x0000,
 };
-#define  CHIPID_MSB_ANSW_POS     (8)
-#define  CHIPID_LSB_ANSW_POS     (4)
-#define  PLL_LOCK_ANSW_POS       (12)
+#define  CHIPID_MSB_ANSW_POS     (9)
+#define  CHIPID_LSB_ANSW_POS     (5)
+#define  PLL_LOCK_ANSW_POS       (13)
 
-/* ------------------------------------
- * GI secure mode - functions defintion
- * ------------------------------------
-*/
-static pilot_error_t GI_transfer(uint16_t ss_mask, uint16_t* seq, uint16_t* answ, uint16_t word_nr);
-static pilot_error_t gi_set_spi_recovery (uint16_t ss_mask, uint16_t conf) {
-  return PILOT_SUCCESS;
-}
+/*
+ * ----------------
+ * DPU FW sequences
+ * ----------------
+ */
 
-static inline pilot_error_t gi_set_lnke_security(uint16_t ss_mask) {
-  uint16_t answ[COUNTOF(gi_cipher_en_seq)];
-  return GI_transfer(ss_mask, (uint16_t *)gi_cipher_en_seq, answ, COUNTOF(gi_cipher_en_seq));
-}
-
-static void gi_resume (uint16_t ss_mask) {
-  /* We should never enter here */
-  Error_Handler();
-}
-
-const uint16_t secure_loader_facsimile [] = {
+static const uint16_t secure_loader_facsimile [] = {
     0x3a8f, 0x515a, 0xeb13, 0xf543,
     0xbfde, 0x225d, 0xa4ca, 0xa2e4,
     0xb7a2, 0x3cae, 0xa3b6, 0x2af0,

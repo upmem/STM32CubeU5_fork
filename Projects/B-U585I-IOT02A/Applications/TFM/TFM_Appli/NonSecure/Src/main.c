@@ -185,13 +185,13 @@ static void RTOS_Init(void) {
 
   host_requests_queue = xQueueCreate( 10, sizeof(uint32_t));
 
-  if (xTaskCreate(mailbox_polling, "mailbox_polling", configMINIMAL_STACK_SIZE, NULL, 50, NULL) != pdPASS) {
+  if (xTaskCreate(gi_task_mailbox_polling, "mailbox_polling", configMINIMAL_STACK_SIZE, NULL, 50, NULL) != pdPASS) {
       Error_Handler();
   }
-  if (xTaskCreate(dpu_load, "dpu loading with facsimile", configMINIMAL_STACK_SIZE, NULL, 2, NULL) != pdPASS) {
+  if (xTaskCreate(gi_task_dpu_load, "dpu loading with facsimile", configMINIMAL_STACK_SIZE, NULL, 2, NULL) != pdPASS) {
       Error_Handler();
   }
-  if (xTaskCreate(fake_request, "trigger a fake host request", configMINIMAL_STACK_SIZE, NULL, 50, NULL) != pdPASS) {
+  if (xTaskCreate(gi_task_fake_request, "trigger a fake host request", configMINIMAL_STACK_SIZE, NULL, 50, NULL) != pdPASS) {
       Error_Handler();
   }
   /* Start scheduler */
