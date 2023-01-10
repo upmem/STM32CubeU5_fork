@@ -316,7 +316,7 @@ static void gi_resume (uint16_t ss_mask) {
   }
 }
 
-static inline pilot_error_t gi_set_lnke_security(void) {
+static inline pilot_error_t gi_set_lnke_security(uint16_t ss_mask) {
   return PILOT_SUCCESS;
 }
 
