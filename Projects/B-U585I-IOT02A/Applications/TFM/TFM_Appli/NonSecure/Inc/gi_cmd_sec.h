@@ -60,14 +60,14 @@ const uint16_t spi_gi_lnke_status_seq[] = {
  * Secure functions
  * ---------------------
 */
-static pilot_error_t GI_transfer(uint16_t* seq, uint16_t* answ, uint16_t word_nr);
-static pilot_error_t gi_set_spi_recovery (uint16_t conf) {
+static pilot_error_t GI_transfer(uint16_t ss_mask, uint16_t* seq, uint16_t* answ, uint16_t word_nr);
+static pilot_error_t gi_set_spi_recovery (uint16_t ss_mask, uint16_t conf) {
   return PILOT_SUCCESS;
 }
 
-static inline pilot_error_t gi_set_lnke_security(void) {
+static inline pilot_error_t gi_set_lnke_security(uint16_t ss_mask) {
   uint16_t answ[sizeof(gi_cipher_en_seq)/sizeof(uint16_t)];
-  return GI_transfer((uint16_t *)gi_cipher_en_seq, answ, sizeof(gi_cipher_en_seq)/sizeof(uint16_t));
+  return GI_transfer(ss_mask, (uint16_t *)gi_cipher_en_seq, answ, sizeof(gi_cipher_en_seq)/sizeof(uint16_t));
 }
 
 static void gi_resume () {

@@ -149,7 +149,7 @@ pilot_error_t gi_init (uint16_t ss_mask) {
   do {
 
     if (gi_cipher_en) {
-      if (gi_set_lnke_security() != PILOT_SUCCESS){
+      if (gi_set_lnke_security(ss_mask) != PILOT_SUCCESS){
 	break;
       }
     } else {
