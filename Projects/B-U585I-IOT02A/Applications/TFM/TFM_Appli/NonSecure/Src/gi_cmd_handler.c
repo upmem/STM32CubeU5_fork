@@ -137,19 +137,20 @@ void gi_task_mailbox_polling (void *pvParameters) {
   uint8_t dpu_rd_token = 0 , host_rd_token = 0;
   uint8_t dpu_wr_token = 0 , host_wr_token = 0;
   while(1) {
+    //TODO add loop on all DPU-DRAMs
     for (uint8_t dpu_id = 0; dpu_id < DPU_NR; dpu_id++) {
       if (mailbox_read_write(DPU_DRAM_MASK_0, dpu_id, dpu_wr, host_wr, &dpu_rd, &host_rd) != PILOT_SUCCESS) {
 	  // TODO call DPU-DRAM reset procedure;
 	  Error_Handler();
       }
-      if (dpu_rd_token != MAILBOX_GET_TOCKEN(dpu_rd)) {
-	  dpu_rd_token = MAILBOX_GET_TOCKEN(dpu_rd);
-	  dpu_wr_token = MAILBOX_INVERT_TOCKEN(dpu_wr_token);
+      if (dpu_rd_token != MAILBOX_GET_TOKEN(dpu_rd)) {
+	  dpu_rd_token = MAILBOX_GET_TOKEN(dpu_rd);
+	  dpu_wr_token = MAILBOX_INVERT_TOKEN(dpu_wr_token);
 	  dpu_wr = dpu_wr_token ;
       }
-      if (host_rd_token != MAILBOX_GET_TOCKEN(host_rd)) {
-	  host_rd_token = MAILBOX_GET_TOCKEN(host_rd);
-	  host_wr_token = MAILBOX_INVERT_TOCKEN(host_wr_token);
+      if (host_rd_token != MAILBOX_GET_TOKEN(host_rd)) {
+	  host_rd_token = MAILBOX_GET_TOKEN(host_rd);
+	  host_wr_token = MAILBOX_INVERT_TOKEN(host_wr_token);
 	  host_wr =  host_wr_token ;
       }
       if (mailbox_read_write(DPU_DRAM_MASK_0, dpu_id, dpu_wr, host_wr, &dpu_rd, &host_rd)!= PILOT_SUCCESS) {
@@ -158,7 +159,7 @@ void gi_task_mailbox_polling (void *pvParameters) {
       }
     }
     /* Move the task in the blocked state for 1ms */
-    vTaskDelay(pdMS_TO_TICKS( 1 ));
+    vTaskDelay(pdMS_TO_TICKS(1));
   }
 }
 
@@ -180,7 +181,7 @@ void gi_task_fake_request (void *pvParameters) {
 
 /* This function loads a fake binary on all the DPU IRAMs of the given DPU-DRAM */
 void gi_task_dpu_load (void *pvParameters) {
-  pilot_error_t status = PILOT_FAILURE;
+  pilot_error_t status = PILOT_SUCCESS;
   uint32_t len = COUNTOF(secure_loader_facsimile);
   uint32_t offset = 0;
   uint32_t *request = 0;

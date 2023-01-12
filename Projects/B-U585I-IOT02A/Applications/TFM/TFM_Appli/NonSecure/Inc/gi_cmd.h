@@ -150,8 +150,8 @@ pilot_error_t check_answer(uint16_t *answ, uint32_t word_nr, uint32_t *valid_nr)
 #define ESC_READ_WRITE_MAIL(host_data, dpu_data) (SET_AB(WORD_ESC_5 | (6 << 8) | ((host_data & 0xF) << 4) | (dpu_data & 0xF)))
 #define MAILBOX_GET_HOST_DATA(answ)	((answ >> 4) & 0x7)
 #define MAILBOX_GET_DPU_DATA(answ)	(answ & 0x7)
-#define MAILBOX_GET_TOCKEN(answ_data)	(answ_data & 0x8)
-#define MAILBOX_INVERT_TOCKEN(data)	((data ^ 0x8) & 0x8)
+#define MAILBOX_GET_TOKEN(answ_data)	(answ_data & 0x8)
+#define MAILBOX_INVERT_TOKEN(data)	((data ^ 0x8) & 0x8)
 
 /* ESC SELECT */
 #define ESC_SELECT(dpu_id)			(SET_AB(WORD_ESC_5 | dpu_id))
