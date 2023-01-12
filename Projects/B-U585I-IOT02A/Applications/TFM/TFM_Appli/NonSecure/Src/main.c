@@ -65,11 +65,11 @@ __no_init volatile uint32_t TestNumber;
 volatile uint32_t TestNumber  __attribute__((section(".bss.NoInit"))) ;
 #endif /* __ICCARM__ */
 
-#define USER_APP_NBLINKS  ((uint8_t) 1U)
 static void uart_putc(unsigned char c)
 {
   COM_Transmit(&c, 1, 1000U);
 }
+#define HOST_REQUESTS_QUEUE_SIZE		(10)
 static void RTOS_Init(void);
 
 /* Redirects printf to TFM_DRIVER_STDIO in case of ARMCLANG*/
@@ -183,7 +183,7 @@ static void RTOS_Init(void) {
   /* PendSV_IRQn interrupt configuration */
   HAL_NVIC_SetPriority( PendSV_IRQn, PILOT_PENDSV_IRQ_PRIORITY, 0 );
 
-  host_requests_queue = xQueueCreate( 10, sizeof(uint32_t));
+  host_requests_queue = xQueueCreate(HOST_REQUESTS_QUEUE_SIZE, sizeof(uint32_t));
 
   if (xTaskCreate(gi_task_mailbox_polling, "mailbox_polling", configMINIMAL_STACK_SIZE, NULL, 50, NULL) != pdPASS) {
       Error_Handler();
