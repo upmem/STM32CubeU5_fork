@@ -234,6 +234,7 @@ pilot_error_t SPI_GI_Transmit_Receive(uint16_t ss_mask, uint16_t* tx_buf, uint16
         else if (rx_buf != NULL && tx_buf == NULL)
           status = HAL_SPI_Receive(&handle_SPI_1, (uint8_t *)&(rx_buf[i]), 1, SPI_16BIT_TIMEOUT_MS);
         set_ss(ss_mask, GPIO_PIN_SET); // Set SS high
+        SPI_debug (tx_buf, rx_buf, len, mode, status);
         xSemaphoreGive(spi1_mutex);
         if (status != HAL_OK)
           break;
@@ -251,6 +252,7 @@ pilot_error_t SPI_GI_Transmit_Receive(uint16_t ss_mask, uint16_t* tx_buf, uint16
       else if (rx_buf != NULL && tx_buf == NULL)
         status = HAL_SPI_Receive(&handle_SPI_1, (uint8_t *)rx_buf, len, SPI_16BIT_TIMEOUT_MS*len);
       set_ss(ss_mask, GPIO_PIN_SET); // Set SS high
+      SPI_debug (tx_buf, rx_buf, len, mode, status);
       xSemaphoreGive(spi1_mutex);
       break;
 
@@ -271,8 +273,6 @@ pilot_error_t SPI_GI_Transmit_Receive(uint16_t ss_mask, uint16_t* tx_buf, uint16
       status = HAL_ERROR;
       break;
   }
-
-  SPI_debug (tx_buf, rx_buf, len, mode, status);
 
   if (status == HAL_OK) {
     err = PILOT_SUCCESS;
