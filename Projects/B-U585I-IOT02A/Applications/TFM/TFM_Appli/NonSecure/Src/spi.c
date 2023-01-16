@@ -281,11 +281,11 @@ pilot_error_t SPI_GI_Transmit_Receive(uint16_t ss_mask, uint16_t* tx_buf, uint16
 }
 
 /**
-  * @brief  Trigger Hardware Reset procedure : SS goes low and high with no data
+  * @brief  Trigger the DPU-DRAM Hardware Reset procedure : SS goes low and high with no data
   * @param  ss_mask: Slave Select bit mask
   * @retval HAL status
   */
-void SPI_HW_Reset(uint16_t ss_mask)
+void SPI_DRAM_HW_Reset(uint16_t ss_mask)
 {
   xSemaphoreTake(spi1_mutex, portMAX_DELAY );
   set_ss(ss_mask, GPIO_PIN_RESET); // Set SS low
