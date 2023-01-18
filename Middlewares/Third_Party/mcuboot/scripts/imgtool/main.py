@@ -455,9 +455,9 @@ def flash(infile, layout, macro, begin, setting, division, phexa ):
     image_value_re = re.compile(r"^\s*"+macro+"\s*=\s*(.*)")
     try:
         value = macro_parser.evaluate_macro(layout, image_value_re, 0, 1)
-    except:  
+    except:
          pass
-    if value is not None:      
+    if value is not None:
         if setting == '1':
             begin_line="set "+begin
         else:
@@ -480,7 +480,7 @@ def flash(infile, layout, macro, begin, setting, division, phexa ):
               help='optional padding size')
 @click.option('-f', '--file', metavar='filename',default=None,
               help='optional file to place before inputfile and to padd up to --optional-size')
-@click.command(help='''Assemble and padd 1 or 2 binaries''')             
+@click.command(help='''Assemble and padd 1 or 2 binaries''')  
 def ass(file, input_size, optional_size, infile, outfile ):
     big_binary=b''
     with open(infile, 'rb') as f:
@@ -496,7 +496,7 @@ def ass(file, input_size, optional_size, infile, outfile ):
         optional_binary+=(optional_size-len(optional_binary))*pack("B",0xff)
     with open(outfile, 'wb') as f:
        big_binary=optional_binary+binary
-       f.write(big_binary) 
+       f.write(big_binary)
 
 @click.command(cls=AliasesGroup,
                context_settings=dict(help_option_names=['-h', '--help']))
