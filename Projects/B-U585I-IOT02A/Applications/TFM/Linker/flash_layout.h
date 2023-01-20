@@ -200,7 +200,7 @@
 #define FLASH_S_PARTITION_SIZE          (0x2E000) /* 184 KB for S partition */
 #if !defined(MCUBOOT_PRIMARY_ONLY)
 #if defined(STM32U585xx) || defined(STM32U575xx)
-#define FLASH_NS_PARTITION_SIZE         (0xA0000) /* 640 KB for NS partition */
+#define FLASH_NS_PARTITION_SIZE         (0x22000) /* 136 KB for NS partition */
 #elif defined(STM32U595xx) || defined(STM32U599xx) || defined(STM32U5A5xx) || defined(STM32U5A9xx)
 #define FLASH_NS_PARTITION_SIZE         (0x128000) /* 1184 KB for NS partition */
 #endif
@@ -228,7 +228,7 @@
 #define FLASH_S_DATA_PARTITION_SIZE     (0x0)
 #endif /* (MCUBOOT_S_DATA_IMAGE_NUMBER == 1) */
 #if (MCUBOOT_NS_DATA_IMAGE_NUMBER == 1)
-#define FLASH_NS_DATA_PARTITION_SIZE    (FLASH_AREA_IMAGE_SECTOR_SIZE)
+#define FLASH_NS_DATA_PARTITION_SIZE    (0x80000) /* 512KB for NS DATA */
 #else
 #define FLASH_NS_DATA_PARTITION_SIZE    (0x0)
 #endif /* (MCUBOOT_NS_DATA_IMAGE_NUMBER == 1) */
