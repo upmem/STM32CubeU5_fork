@@ -1,4 +1,4 @@
-#!/bin/bash - 
+#!/bin/bash -
 
 echo "dataimg.sh started"
 # Absolute path to this script
@@ -62,7 +62,7 @@ tfm_ns_enc_sign="$userAppBinary/tfm_ns_data_enc_sign$ver.bin"
 
 #field updated by TFM_SBSFU_Boot postbuild
 
-image_ns_size=0x2000
+image_ns_size=0x80000
 image_s_size=0x2000
 primary_only=0
 crypto_scheme=2

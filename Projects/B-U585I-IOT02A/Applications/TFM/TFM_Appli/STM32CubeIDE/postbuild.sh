@@ -50,7 +50,7 @@ tfm_sign=$userAppBinary"/tfm_app_sign"$ver".bin"
 tfm=$userAppBinary"/tfm_app.bin"
 
 # field updated with tfm_sbsfu_boot postbuild
-image_ns_size=0xa0000
+image_ns_size=0x22000
 image_s_size=0x2e000
 primary_only=0
 app_image_number=2
