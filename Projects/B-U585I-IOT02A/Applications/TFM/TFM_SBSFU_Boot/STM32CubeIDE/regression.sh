@@ -59,5 +59,4 @@ if [ $ret != 0 ]; then
   if [ "$1" != "AUTO" ]; then read -p "regression script failed, press a key" -n1 -s; fi
   exit 1
 fi
-if [ "$1" != "AUTO" ]; then read -p "regression script Done, press a key" -n1 -s; fi
 exit 0
