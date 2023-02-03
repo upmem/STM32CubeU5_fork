@@ -1,5 +1,9 @@
-LOCAL_PATH=~/workspace/STM32Cube_FW_U5/Projects/B-U585I-IOT02A/Applications/TFM
-REMOTE_PATH=/home/upmem/work/mbartoli
+if [ -z "${LOCAL_PATH}" ]; then 
+  LOCAL_PATH=~/workspace/STM32Cube_FW_U5/Projects/B-U585I-IOT02A/Applications/TFM
+fi
+if [ -z "${REMOTE_PATH}" ]; then 
+  REMOTE_PATH=/home/upmem/work/mbartoli
+fi
 scp $LOCAL_PATH/TFM_Appli/Binary/tfm_ns_app_init.bin upmem@172.16.3.75:$REMOTE_PATH/binaries
 scp $LOCAL_PATH/TFM_Appli/Binary/tfm_ns_data_init.bin upmem@172.16.3.75:$REMOTE_PATH/binaries
 scp $LOCAL_PATH/TFM_Appli/Binary/tfm_s_app_init.bin upmem@172.16.3.75:$REMOTE_PATH/binaries
