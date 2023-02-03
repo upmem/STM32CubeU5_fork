@@ -86,7 +86,7 @@ SECTIONS
 
     .flash_ns_data :
     {
-         *(.data.flash_ns_data);
+        *(.data.flash_ns_data);
     } > FLASH_NS_DATA
 
     /* To copy multiple ROM to RAM sections,
