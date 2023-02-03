@@ -25,7 +25,7 @@
 MEMORY
 {
   FLASH (rx)  : ORIGIN = NS_CODE_START, LENGTH = NS_CODE_SIZE
-  FLASH_DATA (r): ORIGIN = FLASH_NS_DATA_START, LENGTH = NS_DATA_IMAGE_DATA1_SIZE
+  FLASH_NS_DATA (r): ORIGIN = FLASH_NS_DATA_START, LENGTH = FLASH_NS_DATA_PARTITION_SIZE
   RAM   (rwx) : ORIGIN = NS_DATA_START, LENGTH = NS_DATA_SIZE
 }
 
@@ -84,10 +84,10 @@ SECTIONS
     } > FLASH
     __exidx_end = .;
 
-    .ns_flash_data :
+    .flash_ns_data :
     {
-         *(.data.flash_data);
-    } > FLASH_DATA
+         *(.data.flash_ns_data);
+    } > FLASH_NS_DATA
 
     /* To copy multiple ROM to RAM sections,
      * define etext2/data2_start/data2_end and
