@@ -67,7 +67,6 @@
 									<listOptionValue builtIn="false" value="DEFAULT_UART_BAUDRATE=115200"/>
 									<listOptionValue builtIn="false" value="INCLUDE_OPTIONAL_CLAIMS"/>
 									<listOptionValue builtIn="false" value="STSAFE_A110"/>
-									<listOptionValue builtIn="false" value="PSA_USE_SE_ST"/>
 									<listOptionValue builtIn="false" value="TFM_DEV_MODE"/>
 									<listOptionValue builtIn="false" value="MBEDTLS_CONFIG_FILE=&lt;tfm_mbedcrypto_config.h&gt;"/>
 									<listOptionValue builtIn="false" value="NDEBUG"/>
