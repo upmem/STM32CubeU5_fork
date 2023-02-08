@@ -78,8 +78,12 @@
 #define portNVIC_SYSTICK_INT_BIT              ( 1UL << 1UL )
 #define portNVIC_SYSTICK_COUNT_FLAG_BIT       ( 1UL << 16UL )
 #define portMIN_INTERRUPT_PRIORITY            ( 255UL )
-#define portNVIC_PENDSV_PRI                   ( portMIN_INTERRUPT_PRIORITY << 16UL )
-#define portNVIC_SYSTICK_PRI                  ( portMIN_INTERRUPT_PRIORITY << 24UL )
+//#define portNVIC_PENDSV_PRI                   ( portMIN_INTERRUPT_PRIORITY << 16UL )
+//#define portNVIC_SYSTICK_PRI                  ( portMIN_INTERRUPT_PRIORITY << 24UL )
+/* Priority as per Cortex-M representation, see https://www.freertos.org/RTOS-Cortex-M3-M4.html */
+#define portNVIC_PENDSV_PRI                   ((PILOT_PENDSV_IRQ_PRIORITY << (8U - __NVIC_PRIO_BITS)) << 16UL )
+#define portNVIC_SYSTICK_PRI                  ((PILOT_TICK_IRQ_PRIORITY << (8U - __NVIC_PRIO_BITS)) << 24UL )
+
 #ifndef configSYSTICK_CLOCK_HZ
     #define configSYSTICK_CLOCK_HZ            configCPU_CLOCK_HZ
     /* Ensure the SysTick is clocked at the same frequency as the core. */
