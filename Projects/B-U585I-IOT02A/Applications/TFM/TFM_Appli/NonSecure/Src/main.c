@@ -44,6 +44,7 @@ __asm("  .global __ARM_use_no_argv\n");
 
 #include "dma.h"
 #include "spi.h"
+#include "i2c.h"
 #include "system.h"
 #include "error.h"
 #include "gi_cmd_handler.h"
@@ -150,6 +151,9 @@ int main(int argc, char **argv)
 
   /* Configure SPI interfaces */
   SPI_Init();
+
+  /* Configure I2C interfaces */
+  I2C_Init();
 
   /* Attach DMA to peripherals (SPI, ...) */
 
