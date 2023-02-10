@@ -39,6 +39,21 @@ static void MX_I2C1_Init(void)
   /* USER CODE END I2C1_Init 1 */
   hi2c1_slave.Instance = I2C1;
   hi2c1_slave.Init.Timing = 0x30909DEC;
+/*
+ * Timing :
+ *  Bits 31:28 PRESC[3:0]: Timing prescaler (PRESC + 1)
+ *  Bits 27:24 Reserved, must be kept at reset value.
+ *  Bits 23:20 SCLDEL[3:0]: Data setup time
+ *  Bits 19:16 SDADEL[3:0]: Data hold time
+ *  Bits 15:8 SCLH[7:0]: SCL high period (master mode)
+ *  Bits 7:0 SCLL[7:0]: SCL low period (master mode)
+ *
+ *  0x30909DEC :
+ *    PRESC = 3
+ *    SCLH = 0x9D = 157
+ *    SCLL = 0xEC = 236
+ *  => F(I2C) = 160MHz/(PRESC+1)/(157+236) = 101kHz
+ */
   hi2c1_slave.Init.OwnAddress1 = 0;
   hi2c1_slave.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
   hi2c1_slave.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
@@ -171,6 +186,37 @@ void I2C_Init(void)
 {
   MX_I2C1_Init();
   MX_I2C2_Init();
+}
+
+void I2C_Master_test()
+{
+  uint8_t i2c_rx[9] = {0};
+  uint16_t word;
+  pilot_error_t err = PILOT_FAILURE;
+  int i;
+
+  /* Read DC/DC (address 0x31) MFR_MODEL (command 0x9A) 8+1 bytes*/
+  err = I2C_PMBUS_Read_Block(0x31, 0x9A, i2c_rx, 9);
+  printf("Read DC/DC Manufacturer model : ");
+  if(err != PILOT_SUCCESS)
+    printf("I2C Error\r\n");
+  else
+  {
+    for(i=8; i>0; i--)
+      printf("%c", (char)i2c_rx[i]);
+    printf("\r\n");
+  }
+
+  /* Read DC/DC (address 0x31) Temperature (command 0x8D)*/
+  // TODO : 2complement should be applied to word, for negative values handling
+  err = I2C_PMBUS_Read_Word(0x31, 0x8D, &word);
+  printf("Read DC/DC Temperature : ");
+  if(err != PILOT_SUCCESS)
+    printf("I2C Error\r\n");
+  else
+  {
+    printf ("%d\r\n", word);
+  }
 }
 
 void I2C_Master_scan()
