@@ -10,6 +10,10 @@
 I2C_HandleTypeDef hi2c1_slave;
 I2C_HandleTypeDef hi2c2_master;
 
+#ifdef DEBUG
+#define I2C_DEBUG
+#endif
+
 #define I2C_SCAN_RETRY (2)
 #define I2C_SCAN_TIMEOUT_MS (1)
 #define I2C_TIMEOUT_MS (1)
@@ -114,6 +118,55 @@ static void MX_I2C2_Init(void)
 
 }
 
+static void I2C_debug(uint16_t address, uint8_t* tx_buf, uint16_t tx_len, uint8_t* rx_buf, uint16_t rx_len, HAL_StatusTypeDef status)
+{
+#ifdef I2C_DEBUG
+  uint16_t i;
+  printf ("I2C Debug:\r\n");
+  printf ("  Address: 0x%02x\r\n", address);
+  if (tx_buf != NULL && tx_len > 0)
+  {
+    printf ("  TX:");
+    for (i=0; i<tx_len; i++)
+      printf (" 0x%02x",tx_buf[i]);
+    printf ("\r\n");
+  }
+  if (rx_buf != NULL && rx_len > 0)
+  {
+    printf ("  RX:");
+    for (i=0; i<rx_len; i++)
+      printf (" 0x%02x",rx_buf[i]);
+    printf ("\r\n");
+  }
+  printf ("  Status: 0x%02x\r\n", status);
+#endif
+}
+
+static void I2C_PMBUS_debug(uint16_t address, uint8_t cmd, uint8_t* tx_buf, uint16_t tx_len, uint8_t* rx_buf, uint16_t rx_len, HAL_StatusTypeDef status)
+{
+#ifdef I2C_DEBUG
+  uint16_t i;
+  printf ("PMBUS Debug:\r\n");
+  printf ("  Address: 0x%02x\r\n", address);
+  printf ("  Command: 0x%02x\r\n", cmd);
+  if (tx_buf != NULL && tx_len > 0)
+  {
+    printf ("  TX:");
+    for (i=0; i<tx_len; i++)
+      printf (" 0x%02x",tx_buf[i]);
+    printf ("\r\n");
+  }
+  if (rx_buf != NULL && rx_len > 0)
+  {
+    printf ("  RX:");
+    for (i=0; i<rx_len; i++)
+      printf (" 0x%02x",rx_buf[i]);
+    printf ("\r\n");
+  }
+  printf ("  Status: 0x%02x\r\n", status);
+#endif
+}
+
 void I2C_Init(void)
 {
   MX_I2C1_Init();
@@ -148,7 +201,8 @@ pilot_error_t I2C_Transmit(uint16_t address, uint8_t* data, uint16_t len)
   pilot_error_t err = PILOT_FAILURE;
   HAL_StatusTypeDef status = HAL_ERROR;
 
-  status = HAL_I2C_Master_Transmit(&hi2c2_master, address, data, len, I2C_TIMEOUT_MS);
+  status = HAL_I2C_Master_Transmit(&hi2c2_master, address << 1, data, len, I2C_TIMEOUT_MS);
+  I2C_debug(address, data, len, NULL, 0, status);
 
   if (status == HAL_OK) {
     err = PILOT_SUCCESS;
@@ -161,7 +215,8 @@ pilot_error_t I2C_Receive(uint16_t address, uint8_t* data, uint16_t len)
   pilot_error_t err = PILOT_FAILURE;
   HAL_StatusTypeDef status = HAL_ERROR;
 
-  status = HAL_I2C_Master_Receive(&hi2c2_master, address, data, len, I2C_TIMEOUT_MS);
+  status = HAL_I2C_Master_Receive(&hi2c2_master, address << 1, data, len, I2C_TIMEOUT_MS);
+  I2C_debug(address, NULL, 0, data, len, status);
 
   if (status == HAL_OK) {
     err = PILOT_SUCCESS;
@@ -174,7 +229,8 @@ static pilot_error_t I2C_PMBUS_Write(uint16_t address, uint8_t cmd, uint8_t* dat
   pilot_error_t err = PILOT_FAILURE;
   HAL_StatusTypeDef status = HAL_ERROR;
 
-  status = HAL_I2C_Mem_Write(&hi2c2_master, address, cmd, I2C_MEMADD_SIZE_8BIT, data, len, I2C_TIMEOUT_MS);
+  status = HAL_I2C_Mem_Write(&hi2c2_master, address << 1, cmd, I2C_MEMADD_SIZE_8BIT, data, len, I2C_TIMEOUT_MS);
+  I2C_PMBUS_debug(address, cmd, data, len, NULL, 0, status);
 
   if (status == HAL_OK) {
     err = PILOT_SUCCESS;
@@ -202,7 +258,8 @@ static pilot_error_t I2C_PMBUS_Read(uint16_t address, uint8_t cmd, uint8_t* data
   pilot_error_t err = PILOT_FAILURE;
   HAL_StatusTypeDef status = HAL_ERROR;
 
-  status = HAL_I2C_Mem_Read(&hi2c2_master, address, cmd, I2C_MEMADD_SIZE_8BIT, data, len, I2C_TIMEOUT_MS);
+  status = HAL_I2C_Mem_Read(&hi2c2_master, address << 1, cmd, I2C_MEMADD_SIZE_8BIT, data, len, I2C_TIMEOUT_MS);
+  I2C_PMBUS_debug(address, cmd, NULL, 0, data, len, status);
 
   if (status == HAL_OK) {
     err = PILOT_SUCCESS;
