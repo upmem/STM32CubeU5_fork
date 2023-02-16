@@ -48,17 +48,15 @@ __asm("  .global __ARM_use_no_argv\n");
 #include "system.h"
 #include "error.h"
 #include "gi_cmd_handler.h"
+#include "pilot_req_handler.h"
 
 
 #include "pilot_config.h"
 #include "board_config.h"
 
 #include "tfm_ns_interface.h"
-/* Temporary includes */
-#include "crypto_tests_common.h"
 
-QueueHandle_t host_requests_queue = NULL;
-
+QueueHandle_t pilot_requests_queue;
 
 #ifdef __ICCARM__
 __no_init volatile uint32_t TestNumber;
@@ -70,7 +68,7 @@ static void uart_putc(unsigned char c)
 {
   COM_Transmit(&c, 1, 1000U);
 }
-#define HOST_REQUESTS_QUEUE_SIZE		(10)
+#define PILOT_REQUESTS_QUEUE_SIZE		(10)
 static void RTOS_Init(void);
 
 /* Redirects printf to TFM_DRIVER_STDIO in case of ARMCLANG*/
@@ -196,15 +194,17 @@ static void RTOS_Init(void) {
   /* PendSV_IRQn interrupt configuration */
   HAL_NVIC_SetPriority( PendSV_IRQn, PILOT_PENDSV_IRQ_PRIORITY, 0 );
 
-  host_requests_queue = xQueueCreate(HOST_REQUESTS_QUEUE_SIZE, sizeof(uint32_t));
+  pilot_requests_queue = xQueueCreate(PILOT_REQUESTS_QUEUE_SIZE, sizeof(uint32_t));
 
-  if (xTaskCreate(gi_task_mailbox_polling, "mailbox_polling", configMINIMAL_STACK_SIZE, NULL, 50, NULL) != pdPASS) {
+  if (xTaskCreate(gi_task_mailbox_polling, "mailbox_polling", configMINIMAL_STACK_SIZE, NULL, configMAX_PRIORITIES, NULL) != pdPASS) {
       Error_Handler();
   }
-  if (xTaskCreate(gi_task_dpu_load, "dpu loading with facsimile", configMINIMAL_STACK_SIZE, NULL, 2, NULL) != pdPASS) {
+
+  if (xTaskCreate(task_fake_request, "push a fake request to the queue", configMINIMAL_STACK_SIZE, NULL, configMAX_PRIORITIES - 1, NULL) != pdPASS) {
       Error_Handler();
   }
-  if (xTaskCreate(gi_task_fake_request, "trigger a fake host request", configMINIMAL_STACK_SIZE, NULL, 50, NULL) != pdPASS) {
+
+  if (xTaskCreate(task_pilot_req_handler, "Pilot request handler waiting on queue", configMINIMAL_STACK_SIZE, NULL, configMAX_PRIORITIES - 2, NULL) != pdPASS) {
       Error_Handler();
   }
   /* Start scheduler */

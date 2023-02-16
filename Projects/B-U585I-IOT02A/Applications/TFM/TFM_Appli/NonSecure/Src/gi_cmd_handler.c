@@ -19,10 +19,11 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "board_config.h"
-#include "queue.h"
+#include "psa/error.h"
+#include "psa/internal_trusted_storage.h"
+
 
 uint16_t answ_buffer[SPI_MAX_BUF_SIZE];
-extern QueueHandle_t host_requests_queue;
 
 static void print_gi_word(uint16_t word)
 {
@@ -79,7 +80,7 @@ pilot_error_t gi_check_lnke_status (uint16_t ss_mask) {
 
   do {
       /* read the LNKE status registers*/
-      if ((gi_al_transfer(ss_mask, (uint16_t*)spi_gi_lnke_status_seq, answ_buffer, COUNTOF(spi_gi_lnke_status_seq)) == PILOT_FAILURE) ||
+      if ((gi_al_transfer(ss_mask, (uint16_t*)spi_gi_lnke_status_seq, answ_buffer, COUNTOF(spi_gi_lnke_status_seq)) != PILOT_SUCCESS) ||
           /* Verify there are valid results in the appropriate answer words */
 	  (popcount(GI_RESPONSE_GET_RESULT_VALID_FLAG(answ_buffer[CHIPID_MSB_ANSW_POS])) < 2) ||
 	  (popcount(GI_RESPONSE_GET_RESULT_VALID_FLAG(answ_buffer[CHIPID_LSB_ANSW_POS])) < 2) ||
@@ -163,32 +164,35 @@ void gi_task_mailbox_polling (void *pvParameters) {
   }
 }
 
-/* This function emulates a request event (via mailbox/usb/smb)
- * when a request arrives its content is copied in a buffer whose pointer is put in the request queue
- */
-void gi_task_fake_request (void *pvParameters) {
-  /* Move the task in the blocked state for 5s */
-  vTaskDelay(pdMS_TO_TICKS( 5000 ));
-  /* Test fake message queueuing */
-  uint32_t* fake_request = pvPortMalloc(sizeof(uint32_t));
-  *fake_request = 0x87654321;
-  if (xQueueSendToBack(host_requests_queue, &fake_request, 0) != pdPASS) {
-    /* Could not send to the queue */
-    Error_Handler();
-  }
-  vTaskSuspend(NULL);
+pilot_error_t gi_share_master_key (void) {
+  uint8_t master_key[AES_128_KEY_SIZE]={0};
+  size_t size;
+  pilot_error_t status =  PILOT_FAILURE;
+  const psa_storage_uid_t uid = ITS_MASTER_KEY_UID;
+  do {
+    if (psa_its_get(uid, 0 , sizeof(master_key), master_key, &size) != PSA_SUCCESS) {
+	break;
+    }
+    if (size != sizeof(master_key)) {
+	break;
+    }
+    printf("master key:\r\n");
+    for (uint8_t i=0; i< sizeof(master_key); i++){
+	printf("0x%x ", master_key[i]);
+    }
+    printf("\r\n");
+    status = PILOT_SUCCESS;
+  } while(0);
+  return status;
 }
 
 /* This function loads a fake binary on all the DPU IRAMs of the given DPU-DRAM */
-void gi_task_dpu_load (void *pvParameters) {
+pilot_error_t gi_dpu_load (void) {
   pilot_error_t status = PILOT_SUCCESS;
   uint32_t len = COUNTOF(secure_loader_facsimile);
   uint32_t offset = 0;
-  uint32_t *request = 0;
-  while(1) {
-    xQueueReceive( host_requests_queue, &request, portMAX_DELAY);
-    printf ("request 0x%lu\r\n",*request);
-    vPortFree((void *)request);
+
+  do {
     while (len/SPI_MAX_BUF_SIZE) {
 	status = gi_al_transfer(DPU_DRAM_MASK_0, (uint16_t *)&secure_loader_facsimile[offset], answ_buffer, SPI_MAX_BUF_SIZE);
 	if (status != PILOT_SUCCESS) {
@@ -197,9 +201,18 @@ void gi_task_dpu_load (void *pvParameters) {
 	len -= SPI_MAX_BUF_SIZE;
 	offset += SPI_MAX_BUF_SIZE;
     }
-    if (status == PILOT_SUCCESS) {
-	gi_al_transfer(DPU_DRAM_MASK_0, (uint16_t *)&secure_loader_facsimile[offset], answ_buffer, len);
+    if (status != PILOT_SUCCESS) {
+	break;
     }
-  }
+    if (gi_al_transfer(DPU_DRAM_MASK_0, (uint16_t *)&secure_loader_facsimile[offset], answ_buffer, len) != PILOT_SUCCESS) {
+	break;
+    }
+    printf("Successfully loaded IRAM\r\n");
+    if (gi_share_master_key() != PILOT_SUCCESS) {
+	break;
+    }
+    status = PILOT_SUCCESS;
+  } while(0);
+  return status;
 }
 
