@@ -154,7 +154,6 @@ int main(int argc, char **argv)
 
   /* Configure I2C interfaces */
   I2C_Init();
-  I2C_Master_scan(); // TODO : move this after all init done ?
 
   /* Attach DMA to peripherals (SPI, ...) */
 
@@ -175,6 +174,10 @@ int main(int argc, char **argv)
       Error_Handler();
   }
   printf ("Non-secure image init all good\r\n");
+
+  /* Perform an I2C scan */
+  I2C_Master_scan();
+  // I2C_Master_test(); // Uncomment it to test I2C communication with DC/DC
 
   /* TODO uncomment it */
 #ifdef  PILOT_RTOS_SUPPORT
