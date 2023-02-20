@@ -5,6 +5,7 @@
  */
 
 #include "i2c.h"
+#include "pmbus.h"
 #include <stdio.h>
 
 I2C_HandleTypeDef hi2c1_slave;
@@ -16,10 +17,10 @@ I2C_HandleTypeDef hi2c2_master;
 
 #define I2C_SCAN_RETRY (2)
 #define I2C_SCAN_TIMEOUT_MS (1)
-#define I2C_TIMEOUT_MS (1)
+#define I2C_TIMEOUT_MS (10)
 /* I2C@100kHz
- *   => 1 byte   <=> 100us (8bit + 1ACK + Start/Stop)
- *   => 100bytes <=> 1ms
+ *   => 1 byte    <=> 100us (8bit + 1ACK + Start/Stop)
+ *   => 100 bytes <=> 10ms (100 bytes will never been transmitted at once)
  */
 
 /**
@@ -196,7 +197,7 @@ void I2C_Master_test()
   int i;
 
   /* Read DC/DC (address 0x31) MFR_MODEL (command 0x9A) 8+1 bytes*/
-  err = I2C_PMBUS_Read_Block(0x31, 0x9A, i2c_rx, 9);
+  err = I2C_PMBUS_Read_Block(0x31, PMBUS_CMD_MFR_MODEL, i2c_rx, 9);
   printf("Read DC/DC Manufacturer model : ");
   if(err != PILOT_SUCCESS)
     printf("I2C Error\r\n");
@@ -209,7 +210,7 @@ void I2C_Master_test()
 
   /* Read DC/DC (address 0x31) Temperature (command 0x8D)*/
   // TODO : 2complement should be applied to word, for negative values handling
-  err = I2C_PMBUS_Read_Word(0x31, 0x8D, &word);
+  err = I2C_PMBUS_Read_Word(0x31, PMBUS_CMD_READ_TEMPERATURE_1, &word);
   printf("Read DC/DC Temperature : ");
   if(err != PILOT_SUCCESS)
     printf("I2C Error\r\n");
