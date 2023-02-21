@@ -1,12 +1,13 @@
 /**
  *
- * Copyright (c) 2022 UPMEM.
+ * Copyright (c) 2023 UPMEM.
  *
  */
 
 #include "i2c.h"
 #include "pmbus.h"
 #include <stdio.h>
+#include "board_config.h"
 
 I2C_HandleTypeDef hi2c1_slave;
 I2C_HandleTypeDef hi2c2_master;
@@ -197,7 +198,7 @@ void I2C_Master_test()
   int i;
 
   /* Read DC/DC (address 0x31) MFR_MODEL (command 0x9A) 8+1 bytes*/
-  err = I2C_PMBUS_Read_Block(0x31, PMBUS_CMD_MFR_MODEL, i2c_rx, 9);
+  err = I2C_PMBUS_Read_Block(I2C_ADDRESS_DCDC, PMBUS_CMD_MFR_MODEL, i2c_rx, 9);
   printf("Read DC/DC Manufacturer model : ");
   if(err != PILOT_SUCCESS)
     printf("I2C Error\r\n");
@@ -210,7 +211,7 @@ void I2C_Master_test()
 
   /* Read DC/DC (address 0x31) Temperature (command 0x8D)*/
   // TODO : 2complement should be applied to word, for negative values handling
-  err = I2C_PMBUS_Read_Word(0x31, PMBUS_CMD_READ_TEMPERATURE_1, &word);
+  err = I2C_PMBUS_Read_Word(I2C_ADDRESS_DCDC, PMBUS_CMD_READ_TEMPERATURE_1, &word);
   printf("Read DC/DC Temperature : ");
   if(err != PILOT_SUCCESS)
     printf("I2C Error\r\n");
@@ -220,8 +221,18 @@ void I2C_Master_test()
   }
 }
 
-void I2C_Master_scan()
+pilot_error_t I2C_Master_ping(uint8_t address)
 {
+  pilot_error_t err = PILOT_FAILURE;
+  if (HAL_I2C_IsDeviceReady(&hi2c2_master, address << 1, I2C_SCAN_RETRY, I2C_SCAN_TIMEOUT_MS) == HAL_OK)
+    err = PILOT_SUCCESS;
+  return err;
+}
+
+uint16_t I2C_Master_scan(void)
+{
+  uint16_t nb_devices = 0;
+
   printf("I2C Master scan :\r\n");
   for (uint8_t address = 0x00; address <= 0x7F; address++)
   {
@@ -235,12 +246,18 @@ void I2C_Master_scan()
     else
     {
       if (HAL_I2C_IsDeviceReady(&hi2c2_master, address << 1, I2C_SCAN_RETRY, I2C_SCAN_TIMEOUT_MS) == HAL_OK)
+      {
 	printf("%2x ", address);
+	nb_devices++;
+      }
       else
+      {
 	printf("-- ");
+      }
     }
     if (address > 0 && (address + 1) % 16 == 0) printf("\r\n");
   }
+  return nb_devices;
 }
 
 pilot_error_t I2C_Transmit(uint16_t address, uint8_t* data, uint16_t len)

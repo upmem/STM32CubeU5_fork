@@ -73,4 +73,7 @@ typedef struct {
 
 extern const dpu_dram_board_config_t dpu_dram_config[];
 
+/* I2C devices */
+#define I2C_ADDRESS_DCDC 0x31
+
 #endif /* __BOARD_CONFIG_H__ */

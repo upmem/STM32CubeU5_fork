@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2022 UPMEM.
+ * Copyright (c) 2023 UPMEM.
  *
  */
 
@@ -17,8 +17,9 @@ extern I2C_HandleTypeDef hi2c1_slave;
 extern I2C_HandleTypeDef hi2c2_master;
 
 void I2C_Init(void);
-void I2C_Master_scan();
-void I2C_Master_test();
+pilot_error_t I2C_Master_ping(uint8_t address);
+uint16_t I2C_Master_scan(void);
+void I2C_Master_test(void);
 
 pilot_error_t I2C_Transmit(uint16_t address, uint8_t* data, uint16_t len);
 pilot_error_t I2C_Receive(uint16_t address, uint8_t* data, uint16_t len);
