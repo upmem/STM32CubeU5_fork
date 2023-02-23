@@ -177,7 +177,9 @@ int main(int argc, char **argv)
 
   /* Perform an I2C scan, and check that at least one device is detected */
   if(I2C_Master_scan() == 0)
+  {
     Error_Handler();
+  }
   // I2C_Master_ping(I2C_ADDRESS_DCDC); // Uncomment to ping DC/DC with I2C
   // I2C_Master_test(); // Uncomment to test I2C communication with DC/DC
 
