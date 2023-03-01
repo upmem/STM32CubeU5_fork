@@ -182,7 +182,7 @@ pilot_error_t gi_share_keys (void) {
     if (size != sizeof(master_key)) {
 	break;
     }
-    if (psa_its_get(ITS_SERVER_PUB_KEY, 0 , sizeof(server_pub_key), server_pub_key, &size) != PSA_SUCCESS) {
+    if (psa_its_get(ITS_SERVER_PUB_KEY_UID, 0 , sizeof(server_pub_key), server_pub_key, &size) != PSA_SUCCESS) {
 	break;
     }
     if (size != sizeof(server_pub_key)) {

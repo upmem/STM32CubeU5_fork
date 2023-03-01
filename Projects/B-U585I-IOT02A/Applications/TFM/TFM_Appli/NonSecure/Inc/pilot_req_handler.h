@@ -9,17 +9,22 @@
 
 #include "pilot_keys.h"
 
-#define HOST_TAG_REQ		(0xA)
-#define HOST_TAG_RSP		(0x9)
+/* Message header definitions */
+#define CMD_TAG_REQ		(0xA)
+#define CMD_TAG_RSP		(0x9)
 
-#define HOST_MAIL_VER_1		(0x1)
+#define CMD_VERSION_1		(0x1)
 #define SET_API_TAG_VER(tag, version) (((tag & 0xf) << 4) | (version & 0xf))
 
+/* Command ID definitions */
 #define SET_MASTER_KEY_CMD	(0x0)
 #define SET_SERVER_PUB_KEY_CMD	(0x1)
 #define DPU_LOAD_CMD		(0x2)
 #define MAX_CMD_NR		(0x2)
 
+/* Max message size is 1KB */
+#define MSG_MAX_WORDS_SIZE	(256)
+/* API error codes definitions */
 typedef uint16_t api_error_t;
 
 #define API_SUCCESS			(0x0)
@@ -30,7 +35,7 @@ typedef uint16_t api_error_t;
 #define SET_API_ERROR(status)		(((status & 0xFF) << 8) | (API_FAILURE))
 #define SET_API_WARNING(status) 	(((status & 0xFF) << 8) | (API_SUCCESS))
 
-// TODO check the endianess and adapt the doc
+/* Messages definitions */
 typedef struct {
   uint8_t tag_ver;
   uint8_t req_id;
