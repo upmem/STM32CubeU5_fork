@@ -66,7 +66,7 @@ void task_fake_request (void *pvParameters) {
   /* Test fake message queueuing */
   while (1) {
       host_msg_header header;
-      header.tag_ver = SET_API_TAG_VER(HOST_TAG_REQ, HOST_MAIL_VER_1);
+      header.tag_ver = SET_API_TAG_VER(CMD_TAG_REQ, CMD_VERSION_1);
       header.req_id = 0xB;
       header.cmd_id = cmd_id;
       switch (cmd_id) {
@@ -111,7 +111,7 @@ void task_fake_request (void *pvParameters) {
  */
 static void send_response (host_msg_header *req, host_msg_header *rsp, size_t rsp_size) {
   /* TODO to be finalized*/
-  rsp->tag_ver = SET_API_TAG_VER(HOST_TAG_RSP, HOST_MAIL_VER_1);
+  rsp->tag_ver = SET_API_TAG_VER(CMD_TAG_RSP, CMD_VERSION_1);
   rsp->req_id = req->req_id;
   rsp->cmd_id = req->cmd_id;
   rsp->size = rsp_size / sizeof(uint32_t);
@@ -120,11 +120,10 @@ static void send_response (host_msg_header *req, host_msg_header *rsp, size_t rs
 }
 
 static void set_key (psa_storage_uid_t uid, uint8_t *key, size_t key_size, uint16_t *status) {
-  const psa_storage_create_flags_t flags = PSA_STORAGE_FLAG_WRITE_ONCE;
   psa_status_t psa_status = PSA_ERROR_GENERIC_ERROR;
   *status = API_FAILURE;
 
-  psa_status = psa_its_set(uid, key_size, key, flags);
+  psa_status = psa_its_set(uid, key_size, key, PSA_STORAGE_FLAG_WRITE_ONCE);
   if (psa_status == PSA_SUCCESS) {
       *status = API_SUCCESS;
   } else if (psa_status == PSA_ERROR_NOT_PERMITTED) {
@@ -133,7 +132,6 @@ static void set_key (psa_storage_uid_t uid, uint8_t *key, size_t key_size, uint1
 }
 
 static void set_master_key (host_set_master_key_req *req) {
-  const psa_storage_create_flags_t flags = PSA_STORAGE_FLAG_WRITE_ONCE;
   host_set_master_key_rsp rsp;
   memset(&rsp, 0, sizeof(rsp));
   set_key(ITS_MASTER_KEY_UID, req->key, sizeof(req->key), &rsp.status);
@@ -143,7 +141,7 @@ static void set_master_key (host_set_master_key_req *req) {
 static void set_server_pub_key (host_set_server_pub_key_req *req) {
   host_set_server_pub_key_rsp rsp;
   memset(&rsp, 0, sizeof(rsp));
-  set_key(ITS_SERVER_PUB_KEY, req->key, sizeof(req->key), &rsp.status);
+  set_key(ITS_SERVER_PUB_KEY_UID, req->key, sizeof(req->key), &rsp.status);
   send_response (&req->hdr, &rsp.hdr, sizeof(host_set_server_pub_key_rsp));
 }
 
@@ -157,24 +155,36 @@ static void dpu_load (host_dpu_load_req *req) {
   send_response (&req->hdr, &rsp.hdr, sizeof(host_dpu_load_rsp));
 }
 
+static pilot_error_t check_message_header (host_msg_header *req) {
+  pilot_error_t ret = PILOT_FAILURE;
+  print_message(req);
+  if (
+      (req->tag_ver == SET_API_TAG_VER(CMD_TAG_REQ, CMD_VERSION_1)) &&
+      (req->size <= MSG_MAX_WORDS_SIZE)
+     ) {
+      ret = PILOT_SUCCESS;
+  }
+  return ret;
+}
+
 void task_pilot_req_handler (void *pvParameters) {
   host_msg_header *req = 0;
-  api_error_t status = API_FAILURE;
   while(1) {
     xQueueReceive( pilot_requests_queue, &req, portMAX_DELAY);
-    print_message(req);
-    switch (req->cmd_id) {
-      case SET_MASTER_KEY_CMD:
-	set_master_key((host_set_master_key_req *)req);
-	break;
-      case SET_SERVER_PUB_KEY_CMD:
-	set_server_pub_key((host_set_server_pub_key_req *)req);
-	break;
-      case DPU_LOAD_CMD:
-	dpu_load((host_dpu_load_req *)req);
-	break;
-      default:
-	break;
+    if (check_message_header(req) == PILOT_SUCCESS) {
+      switch (req->cmd_id) {
+	case SET_MASTER_KEY_CMD:
+	  set_master_key((host_set_master_key_req *)req);
+	  break;
+	case SET_SERVER_PUB_KEY_CMD:
+	  set_server_pub_key((host_set_server_pub_key_req *)req);
+	  break;
+	case DPU_LOAD_CMD:
+	  dpu_load((host_dpu_load_req *)req);
+	  break;
+	default:
+	  break;
+      }
     }
     vPortFree((void *)req);
   }
