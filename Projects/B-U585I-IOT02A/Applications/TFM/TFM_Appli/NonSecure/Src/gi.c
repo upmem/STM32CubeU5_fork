@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "error.h"
-#include "gi_cmd_handler.h"
+#include "gi.h"
 #include "spi.h"
 #include "system.h"
 #include "bitops.h"
@@ -21,6 +21,7 @@
 #include "board_config.h"
 #include "psa/error.h"
 #include "psa/internal_trusted_storage.h"
+#include "pilot_keys.h"
 
 
 uint16_t answ_buffer[SPI_MAX_BUF_SIZE];
@@ -129,7 +130,7 @@ pilot_error_t mailbox_read_write (uint16_t ss_mask, uint8_t dpu_id, uint8_t dpu_
 }
 
 /*
- * This function is an inital draft of the MAILBOX protocol:
+ * TODO This function is an inital draft of the MAILBOX protocol:
  * In case of Host/DPU has toggled the rd tocken, Pilot reads the related data and toggles the wr tocken
  */
 void gi_task_mailbox_polling (void *pvParameters) {
@@ -159,26 +160,38 @@ void gi_task_mailbox_polling (void *pvParameters) {
 	  Error_Handler();
       }
     }
-    /* Move the task in the blocked state for 1ms */
+    /* Move the task to blocked state for 1ms */
     vTaskDelay(pdMS_TO_TICKS(1));
   }
 }
 
-pilot_error_t gi_share_master_key (void) {
-  uint8_t master_key[AES_128_KEY_SIZE]={0};
+
+/*
+ * This function read the keys from the ITS
+ * TODO share the keys with the DPUs once integrated
+ */
+pilot_error_t gi_share_keys (void) {
+  uint8_t master_key[AES_128_KEY_SIZE];
+  uint8_t server_pub_key[ECDSA_P256_PUB_KEY_SIZE];
   size_t size;
   pilot_error_t status =  PILOT_FAILURE;
-  const psa_storage_uid_t uid = ITS_MASTER_KEY_UID;
   do {
-    if (psa_its_get(uid, 0 , sizeof(master_key), master_key, &size) != PSA_SUCCESS) {
+    if (psa_its_get(ITS_MASTER_KEY_UID, 0 , sizeof(master_key), master_key, &size) != PSA_SUCCESS) {
 	break;
     }
     if (size != sizeof(master_key)) {
 	break;
     }
-    printf("master key:\r\n");
-    for (uint8_t i=0; i< sizeof(master_key); i++){
-	printf("0x%x ", master_key[i]);
+    if (psa_its_get(ITS_SERVER_PUB_KEY, 0 , sizeof(server_pub_key), server_pub_key, &size) != PSA_SUCCESS) {
+	break;
+    }
+    if (size != sizeof(server_pub_key)) {
+	break;
+    }
+    /* do not print any secret key */
+    printf("server public key:\r\n");
+    for (uint8_t i=0; i< sizeof(server_pub_key); i++){
+	printf("0x%x ", server_pub_key[i]);
     }
     printf("\r\n");
     status = PILOT_SUCCESS;
@@ -186,7 +199,11 @@ pilot_error_t gi_share_master_key (void) {
   return status;
 }
 
-/* This function loads a fake binary on all the DPU IRAMs of the given DPU-DRAM */
+
+/*
+ * This function loads a fake binary on all the DPU IRAMs of the given DPU-DRAM
+ * TODO replace with DPU FW binaries.
+ * */
 pilot_error_t gi_dpu_load (void) {
   pilot_error_t status = PILOT_SUCCESS;
   uint32_t len = COUNTOF(secure_loader_facsimile);
@@ -204,15 +221,19 @@ pilot_error_t gi_dpu_load (void) {
     if (status != PILOT_SUCCESS) {
 	break;
     }
-    if (gi_al_transfer(DPU_DRAM_MASK_0, (uint16_t *)&secure_loader_facsimile[offset], answ_buffer, len) != PILOT_SUCCESS) {
+
+    status = gi_al_transfer(DPU_DRAM_MASK_0, (uint16_t *)&secure_loader_facsimile[offset], answ_buffer, len);
+    if (status != PILOT_SUCCESS) {
 	break;
     }
-    printf("Successfully loaded IRAM\r\n");
-    if (gi_share_master_key() != PILOT_SUCCESS) {
+    printf("IRAM successfully loaded\r\n");
+
+    status = gi_share_keys();
+    if (status != PILOT_SUCCESS) {
 	break;
     }
-    status = PILOT_SUCCESS;
   } while(0);
+
   return status;
 }
 

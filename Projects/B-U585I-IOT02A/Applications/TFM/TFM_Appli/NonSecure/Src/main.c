@@ -47,7 +47,7 @@ __asm("  .global __ARM_use_no_argv\n");
 #include "i2c.h"
 #include "system.h"
 #include "error.h"
-#include "gi_cmd_handler.h"
+#include "gi.h"
 #include "pilot_req_handler.h"
 
 
@@ -200,11 +200,14 @@ static void RTOS_Init(void) {
       Error_Handler();
   }
 
-  if (xTaskCreate(task_fake_request, "push a fake request to the queue", configMINIMAL_STACK_SIZE, NULL, configMAX_PRIORITIES - 1, NULL) != pdPASS) {
+  if (xTaskCreate(task_pilot_req_handler, "Pilot request handler waiting on queue", configMINIMAL_STACK_SIZE, NULL, configMAX_PRIORITIES - 2, NULL) != pdPASS) {
       Error_Handler();
   }
-
-  if (xTaskCreate(task_pilot_req_handler, "Pilot request handler waiting on queue", configMINIMAL_STACK_SIZE, NULL, configMAX_PRIORITIES - 2, NULL) != pdPASS) {
+  /*
+   * This function emulates an Host request event
+   * TODO remove this function
+   * */
+  if (xTaskCreate(task_fake_request, "push a fake request to the queue", configMINIMAL_STACK_SIZE, NULL, configMAX_PRIORITIES - 1, NULL) != pdPASS) {
       Error_Handler();
   }
   /* Start scheduler */
