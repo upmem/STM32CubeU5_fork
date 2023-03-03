@@ -14,7 +14,7 @@
  * --------------------
  */
 pilot_error_t gi_al_init(uint16_t ss_mask);
-pilot_error_t gi_al_transfer(uint16_t ss_mask, uint16_t* seq, uint16_t* answ, uint16_t word_nr);
+pilot_error_t gi_al_transfer(uint16_t ss_mask, uint16_t* seq, uint16_t* answ, uint16_t word_nr, int mode);
 
 /* -------------------
  * Unsecure Sequences

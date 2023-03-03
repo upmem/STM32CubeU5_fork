@@ -24,6 +24,9 @@ SPI_HandleTypeDef handle_SPI_3;
 
 static SemaphoreHandle_t spi1_mutex;
 
+volatile uint8_t dma_transfer;
+#define TRANSFER_START			(0)
+#define TRANSFER_COMPLETE		(1)
 
 /**
   * @brief SPI1 Initialization Function
@@ -219,59 +222,68 @@ pilot_error_t SPI_GI_Transmit_Receive(uint16_t ss_mask, uint16_t* tx_buf, uint16
   pilot_error_t err = PILOT_FAILURE;
   HAL_StatusTypeDef status = HAL_ERROR;
 
-  switch(mode)
-  {
-    /* Send SPI buffer items one by one (ie ChipSelect asserted and de-asserted every uint16_t) */
-    case SPI_TRANSFERT_MODE_16BIT_BLOCKING:
-      for (i=0; i<len; i++)
-      {
-	xSemaphoreTake(spi1_mutex, portMAX_DELAY );
-	set_ss(ss_mask, GPIO_PIN_RESET); // Set SS Low
-        if (rx_buf != NULL && tx_buf != NULL)
-          status = HAL_SPI_TransmitReceive(&handle_SPI_1, (uint8_t *)&(tx_buf[i]), (uint8_t *)&(rx_buf[i]), 1, SPI_16BIT_TIMEOUT_MS);
-        else if (rx_buf == NULL && tx_buf != NULL)
-          status = HAL_SPI_Transmit(&handle_SPI_1, (uint8_t *)&(tx_buf[i]), 1, SPI_16BIT_TIMEOUT_MS);
-        else if (rx_buf != NULL && tx_buf == NULL)
-          status = HAL_SPI_Receive(&handle_SPI_1, (uint8_t *)&(rx_buf[i]), 1, SPI_16BIT_TIMEOUT_MS);
-        set_ss(ss_mask, GPIO_PIN_SET); // Set SS high
-        SPI_debug (tx_buf, rx_buf, len, mode, status);
-        xSemaphoreGive(spi1_mutex);
-        if (status != HAL_OK)
-          break;
-      }
-      break;
-
-    /* Send SPI buffer in a single BURST (ie ChipSelect asserted only once) */
-    case SPI_TRANSFERT_MODE_BURST_BLOCKING:
+  if (
+      ((tx_buf != NULL) || (rx_buf != NULL)) &&
+      (len != 0)
+    ) {
       xSemaphoreTake(spi1_mutex, portMAX_DELAY );
-      set_ss(ss_mask, GPIO_PIN_RESET); // Set SS Low
-      if (rx_buf != NULL && tx_buf != NULL)
-        status = HAL_SPI_TransmitReceive(&handle_SPI_1, (uint8_t *)tx_buf, (uint8_t *)rx_buf, len, SPI_16BIT_TIMEOUT_MS*len);
-      else if (rx_buf == NULL && tx_buf != NULL)
-        status = HAL_SPI_Transmit(&handle_SPI_1, (uint8_t *)tx_buf, len, SPI_16BIT_TIMEOUT_MS*len);
-      else if (rx_buf != NULL && tx_buf == NULL)
-        status = HAL_SPI_Receive(&handle_SPI_1, (uint8_t *)rx_buf, len, SPI_16BIT_TIMEOUT_MS*len);
-      set_ss(ss_mask, GPIO_PIN_SET); // Set SS high
+      switch(mode)
+      {
+	/* Send SPI buffer items one by one (ie ChipSelect asserted and de-asserted every uint16_t) */
+	case SPI_TRANSFERT_MODE_16BIT_BLOCKING:
+	  for (i=0; i<len; i++)
+	  {
+	    set_ss(ss_mask, GPIO_PIN_RESET); // Set SS Low
+	    if (rx_buf != NULL && tx_buf != NULL) {
+	      status = HAL_SPI_TransmitReceive(&handle_SPI_1, (uint8_t *)&(tx_buf[i]), (uint8_t *)&(rx_buf[i]), 1, SPI_16BIT_TIMEOUT_MS);
+	    } else if (tx_buf != NULL) {
+	      status = HAL_SPI_Transmit(&handle_SPI_1, (uint8_t *)&(tx_buf[i]), 1, SPI_16BIT_TIMEOUT_MS);
+	    } else {
+	      status = HAL_SPI_Receive(&handle_SPI_1, (uint8_t *)&(rx_buf[i]), 1, SPI_16BIT_TIMEOUT_MS);
+	    }
+	    set_ss(ss_mask, GPIO_PIN_SET); // Set SS high
+	    if (status != HAL_OK)
+	      break;
+	  }
+	  break;
+
+	/* Send SPI buffer in a single BURST (ie ChipSelect asserted only once) */
+	case SPI_TRANSFERT_MODE_BURST_BLOCKING:
+	  set_ss(ss_mask, GPIO_PIN_RESET); // Set SS Low
+	  if (rx_buf != NULL && tx_buf != NULL) {
+	    status = HAL_SPI_TransmitReceive(&handle_SPI_1, (uint8_t *)tx_buf, (uint8_t *)rx_buf, len, SPI_16BIT_TIMEOUT_MS*len);
+	  } else if (tx_buf != NULL) {
+	    status = HAL_SPI_Transmit(&handle_SPI_1, (uint8_t *)tx_buf, len, SPI_16BIT_TIMEOUT_MS*len);
+	  } else {
+	    status = HAL_SPI_Receive(&handle_SPI_1, (uint8_t *)rx_buf, len, SPI_16BIT_TIMEOUT_MS*len);
+	  }
+	  set_ss(ss_mask, GPIO_PIN_SET); // Set SS high
+	  break;
+
+	/* Send SPI buffer using DMA (ChipSelect asserted only once) */
+	case SPI_TRANSFERT_MODE_DMA:
+	  dma_transfer = TRANSFER_START;
+	  set_ss(ss_mask, GPIO_PIN_RESET);  // Set SS Low.
+	  if (rx_buf != NULL && tx_buf != NULL) {
+	    status = HAL_SPI_TransmitReceive_DMA(&handle_SPI_1, (uint8_t *)tx_buf, (uint8_t *)rx_buf, len);
+	  } else if (tx_buf != NULL) {
+	    status = HAL_SPI_Transmit_DMA(&handle_SPI_1, (uint8_t *)tx_buf, len);
+	  } else {
+	    status = HAL_SPI_Receive_DMA(&handle_SPI_1, (uint8_t *)rx_buf, len);
+	  }
+	  /* wait the end of DMA transfer */
+	  while (dma_transfer != TRANSFER_COMPLETE)
+	  {}
+	  set_ss(ss_mask, GPIO_PIN_SET); // Set SS high
+	  break;
+	/* unknown mode : return error */
+	default:
+	  status = HAL_ERROR;
+	  break;
+      }
+      /* Always put SPI_debug before the mutex release*/
       SPI_debug (tx_buf, rx_buf, len, mode, status);
       xSemaphoreGive(spi1_mutex);
-      break;
-
-    /* Send SPI buffer using DMA (ChipSelect asserted only once) */
-    case SPI_TRANSFERT_MODE_DMA:
-      xSemaphoreTake(spi1_mutex, portMAX_DELAY );
-      set_ss(ss_mask, GPIO_PIN_RESET);  // Set SS Low. Will be set high in interrupt
-      if (rx_buf != NULL && tx_buf != NULL)
-        status = HAL_SPI_TransmitReceive_DMA(&handle_SPI_1, (uint8_t *)tx_buf, (uint8_t *)rx_buf, len);
-      else if (rx_buf == NULL && tx_buf != NULL)
-        status = HAL_SPI_Transmit_DMA(&handle_SPI_1, (uint8_t *)tx_buf, len);
-      else if (rx_buf != NULL && tx_buf == NULL)
-        status = HAL_SPI_Receive_DMA(&handle_SPI_1, (uint8_t *)rx_buf, len);
-      break;
-
-    /* unknown mode : return error */
-    default:
-      status = HAL_ERROR;
-      break;
   }
 
   if (status == HAL_OK) {
@@ -299,9 +311,7 @@ void SPI_Com_Complete(SPI_HandleTypeDef *hspi)
 
   if (hspi == &handle_SPI_1)
   {
-    /* Set All Chip Select High */
-    set_ss(DPU_DRAM_MASK_ALL, GPIO_PIN_RESET);
-    xSemaphoreGive(spi1_mutex);
+    dma_transfer = TRANSFER_COMPLETE;
   }
 }
 
