@@ -18,10 +18,10 @@
 /*
  * In case of any error answer this function call the Error_Handler.
 */
-pilot_error_t gi_al_transfer(uint16_t ss_mask, uint16_t* seq, uint16_t* answ, uint16_t word_nr) {
+pilot_error_t gi_al_transfer(uint16_t ss_mask, uint16_t* seq, uint16_t* answ, uint16_t word_nr, int mode) {
   pilot_error_t ret = PILOT_FAILURE;
   /* Send words over SPI */
-  if (SPI_GI_Transmit_Receive(ss_mask, seq, answ, word_nr, SPI_TRANSFERT_MODE_BURST_BLOCKING) != PILOT_SUCCESS) {
+  if (SPI_GI_Transmit_Receive(ss_mask, seq, answ, word_nr, mode) != PILOT_SUCCESS) {
       Error_Handler();
   }
 
@@ -37,7 +37,7 @@ pilot_error_t gi_al_transfer(uint16_t ss_mask, uint16_t* seq, uint16_t* answ, ui
 
 inline pilot_error_t gi_al_init(uint16_t ss_mask) {
   uint16_t answ[COUNTOF(gi_cipher_en_seq)];
-  return gi_al_transfer(ss_mask, (uint16_t *)gi_cipher_en_seq, answ, COUNTOF(gi_cipher_en_seq));
+  return gi_al_transfer(ss_mask, (uint16_t *)gi_cipher_en_seq, answ, COUNTOF(gi_cipher_en_seq), SPI_TRANSFERT_MODE_BURST_BLOCKING);
 }
 
 #endif

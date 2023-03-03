@@ -45,7 +45,7 @@ static void gi_resume (uint16_t ss_mask) {
  * Only valid answers are copied to the answ buffer while errors are discarded.
  * The first word of each answer, related to the previous sequence received by the GI, is discarded.
 */
-pilot_error_t gi_al_transfer(uint16_t ss_mask, uint16_t* seq, uint16_t* answ, uint16_t word_nr) {
+pilot_error_t gi_al_transfer(uint16_t ss_mask, uint16_t* seq, uint16_t* answ, uint16_t word_nr, int mode) {
   pilot_error_t ret = PILOT_FAILURE;
   uint32_t valid_nr = 0;
   uint32_t timestamp = get_timestamp();
@@ -59,7 +59,7 @@ pilot_error_t gi_al_transfer(uint16_t ss_mask, uint16_t* seq, uint16_t* answ, ui
 	error = 0;
     }
     /* Send words over SPI */
-    if (SPI_GI_Transmit_Receive(ss_mask, seq, gi_tmp_buffer, word_nr, SPI_TRANSFERT_MODE_BURST_BLOCKING) != PILOT_SUCCESS) {
+    if (SPI_GI_Transmit_Receive(ss_mask, seq, gi_tmp_buffer, word_nr, mode) != PILOT_SUCCESS) {
 	Error_Handler();
     }
 
@@ -118,7 +118,7 @@ static pilot_error_t gi_set_spi_recovery (uint16_t ss_mask, uint16_t conf) {
   }
 
   /* Configure the SPI recovery CNTR register */
-  if (gi_al_transfer(ss_mask, (uint16_t *)gi_set_spi_recovery_seq, answ, COUNTOF(gi_set_spi_recovery_seq)) == PILOT_SUCCESS) {
+  if (gi_al_transfer(ss_mask, (uint16_t *)gi_set_spi_recovery_seq, answ, COUNTOF(gi_set_spi_recovery_seq), SPI_TRANSFERT_MODE_BURST_BLOCKING) == PILOT_SUCCESS) {
 	ret = PILOT_SUCCESS;
 	spi_recovery_ignored_words_nr = ignored_words_nr;
   }

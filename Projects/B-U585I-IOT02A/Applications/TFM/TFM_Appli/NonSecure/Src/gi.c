@@ -66,7 +66,7 @@ pilot_error_t gi_init (uint16_t ss_mask) {
     if (gi_al_init(ss_mask) !=  PILOT_SUCCESS) {
 	break;
     }
-    if (gi_al_transfer(ss_mask, (uint16_t *)init_dpu_id_seq, answ_buffer, COUNTOF(init_dpu_id_seq)) != PILOT_SUCCESS) {
+    if (gi_al_transfer(ss_mask, (uint16_t *)init_dpu_id_seq, answ_buffer, COUNTOF(init_dpu_id_seq), SPI_TRANSFERT_MODE_BURST_BLOCKING) != PILOT_SUCCESS) {
 	break;
     }
     ret = PILOT_SUCCESS;
@@ -81,7 +81,7 @@ pilot_error_t gi_check_lnke_status (uint16_t ss_mask) {
 
   do {
       /* read the LNKE status registers*/
-      if ((gi_al_transfer(ss_mask, (uint16_t*)spi_gi_lnke_status_seq, answ_buffer, COUNTOF(spi_gi_lnke_status_seq)) != PILOT_SUCCESS) ||
+      if ((gi_al_transfer(ss_mask, (uint16_t*)spi_gi_lnke_status_seq, answ_buffer, COUNTOF(spi_gi_lnke_status_seq), SPI_TRANSFERT_MODE_BURST_BLOCKING) != PILOT_SUCCESS) ||
           /* Verify there are valid results in the appropriate answer words */
 	  (popcount(GI_RESPONSE_GET_RESULT_VALID_FLAG(answ_buffer[CHIPID_MSB_ANSW_POS])) < 2) ||
 	  (popcount(GI_RESPONSE_GET_RESULT_VALID_FLAG(answ_buffer[CHIPID_LSB_ANSW_POS])) < 2) ||
@@ -115,7 +115,7 @@ pilot_error_t mailbox_read_write (uint16_t ss_mask, uint8_t dpu_id, uint8_t dpu_
   *dpu_rd_data = 0;
   *host_rd_data = 0;
   do {
-      if (gi_al_transfer(ss_mask, (uint16_t *)mailbox_seq, answ_buffer, COUNTOF(mailbox_seq)) != PILOT_SUCCESS) {
+      if (gi_al_transfer(ss_mask, (uint16_t *)mailbox_seq, answ_buffer, COUNTOF(mailbox_seq), SPI_TRANSFERT_MODE_BURST_BLOCKING) != PILOT_SUCCESS) {
         break;
       }
       if (popcount(GI_RESPONSE_GET_RESULT_VALID_FLAG(answ_buffer[MAILBOX_ANSW_DATA_POS])) < 2) {
@@ -214,7 +214,7 @@ pilot_error_t gi_dpu_load (void) {
     while (seq_len) {
 	transfer_len = (seq_len > SPI_BUF_WORDS_NR) ? SPI_BUF_WORDS_NR : seq_len;
 
-	status = gi_al_transfer(DPU_DRAM_MASK_0, (uint16_t *)&secure_loader_facsimile[offset], answ_buffer, transfer_len);
+	status = gi_al_transfer(DPU_DRAM_MASK_0, (uint16_t *)&secure_loader_facsimile[offset], answ_buffer, transfer_len, SPI_TRANSFERT_MODE_DMA);
 	if (status != PILOT_SUCCESS) {
 	    break;
 	}
