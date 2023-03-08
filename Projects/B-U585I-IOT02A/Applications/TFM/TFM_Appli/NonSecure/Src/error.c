@@ -8,6 +8,7 @@
 #include "error.h"
 
 void pilot_error(char* file, int line) {
-  printf("Error_Handler file %s line %d\n", file, line);
+  printf("Pilot_error\r\n");
+  printf("file %s line %d\r\n", file, line);
   while(1) {}
 }
