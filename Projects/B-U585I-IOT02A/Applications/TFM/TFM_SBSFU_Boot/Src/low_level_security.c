@@ -279,8 +279,24 @@ const struct mpu_armv8m_region_cfg_t region_cfg_init_ns[] = {
                FLOW_STEP_MPU_NS_I_CH_R4,
                FLOW_CTRL_MPU_NS_I_CH_R4,
 #endif /* FLOW_CONTROL */
-           }
+           },
 #endif /*   TFM_ERROR_HANDLER_NON_SECURE */
+	   /* Let NS code access Unique device ID registers */
+	   {
+               6,
+               UID_BASE,
+               UID_BASE + (~MPU_RLAR_LIMIT_Msk),
+               MPU_ARMV8M_MAIR_ATTR_DEVICE_IDX,
+               MPU_ARMV8M_XN_EXEC_NEVER,
+               MPU_ARMV8M_AP_RW_PRIV_ONLY,
+               MPU_ARMV8M_SH_NONE,
+#ifdef FLOW_CONTROL
+               FLOW_STEP_MPU_NS_I_EN_R6,
+               FLOW_CTRL_MPU_NS_I_EN_R6,
+               FLOW_STEP_MPU_NS_I_CH_R6,
+               FLOW_CTRL_MPU_NS_I_CH_R6,
+#endif /* FLOW_CONTROL */
+	   }
 };
 
 #if defined(__ICCARM__)

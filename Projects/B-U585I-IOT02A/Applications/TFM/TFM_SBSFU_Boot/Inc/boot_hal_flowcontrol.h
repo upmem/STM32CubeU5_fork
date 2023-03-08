@@ -71,6 +71,7 @@ extern "C" {
 #else
 #define FLOW_STEP_MPU_NS_I_EN_R4    0x00000000U        /*!< No effect on control flow */
 #endif /* TFM_ERROR_HANDLER_NON_SECURE */
+#define FLOW_STEP_MPU_NS_I_EN_R6    0x000b165dU        /*!< Step MPU NonSecure Region 6 Init enable value */
 #define FLOW_STEP_MPU_NS_I_EN       0x000154b5U        /*!< Step MPU NonSecure Init enable value */
 #else /* TFM_BOOT_MPU_PROTECTION */
 #define FLOW_STEP_MPU_S_I_EN_R0     0x00000000U        /*!< No effect on control flow */
@@ -157,6 +158,7 @@ extern "C" {
 #else
 #define FLOW_STEP_MPU_NS_I_CH_R4    0x00000000U        /*!< No effect on control flow */
 #endif /* #ifdef TFM_ERROR_HANDLER_NON_SECURE */
+#define FLOW_STEP_MPU_NS_I_CH_R6    0x0075e7fb       /*!< Step MPU NonSecure Region 4 Init check value */
 #define FLOW_STEP_MPU_NS_I_CH       0x0003717dU        /*!< Step MPU NonSecure Init check value */
 #else /* TFM_BOOT_MPU_PROTECTION */
 #define FLOW_STEP_MPU_S_I_CH_R0     0x00000000U        /*!< No effect on control flow */
@@ -277,7 +279,8 @@ extern "C" {
 #define FLOW_CTRL_MPU_NS_I_EN_R2    (FLOW_CTRL_MPU_NS_I_EN_R1 ^  FLOW_STEP_MPU_NS_I_EN_R2)
 #define FLOW_CTRL_MPU_NS_I_EN_R3    (FLOW_CTRL_MPU_NS_I_EN_R2 ^  FLOW_STEP_MPU_NS_I_EN_R3)
 #define FLOW_CTRL_MPU_NS_I_EN_R4    (FLOW_CTRL_MPU_NS_I_EN_R3 ^  FLOW_STEP_MPU_NS_I_EN_R4)
-#define FLOW_CTRL_MPU_NS_I_EN       (FLOW_CTRL_MPU_NS_I_EN_R4 ^  FLOW_STEP_MPU_NS_I_EN)
+#define FLOW_CTRL_MPU_NS_I_EN_R6    (FLOW_CTRL_MPU_NS_I_EN_R4 ^  FLOW_STEP_MPU_NS_I_EN_R6)
+#define FLOW_CTRL_MPU_NS_I_EN       (FLOW_CTRL_MPU_NS_I_EN_R6 ^  FLOW_STEP_MPU_NS_I_EN)
 
 #define FLOW_CTRL_SAU_I_EN_R0       (FLOW_CTRL_MPU_NS_I_EN ^     FLOW_STEP_SAU_I_EN_R0)
 #define FLOW_CTRL_SAU_I_EN_R1       (FLOW_CTRL_SAU_I_EN_R0 ^     FLOW_STEP_SAU_I_EN_R1)
@@ -310,7 +313,9 @@ extern "C" {
 #define FLOW_CTRL_MPU_NS_I_CH_R2    (FLOW_CTRL_MPU_NS_I_CH_R1 ^  FLOW_STEP_MPU_NS_I_CH_R2)
 #define FLOW_CTRL_MPU_NS_I_CH_R3    (FLOW_CTRL_MPU_NS_I_CH_R2 ^  FLOW_STEP_MPU_NS_I_CH_R3)
 #define FLOW_CTRL_MPU_NS_I_CH_R4    (FLOW_CTRL_MPU_NS_I_CH_R3 ^  FLOW_STEP_MPU_NS_I_CH_R4)
-#define FLOW_CTRL_MPU_NS_I_CH       (FLOW_CTRL_MPU_NS_I_CH_R4 ^  FLOW_STEP_MPU_NS_I_CH)
+#define FLOW_CTRL_MPU_NS_I_CH_R6    (FLOW_CTRL_MPU_NS_I_CH_R4 ^  FLOW_STEP_MPU_NS_I_CH_R6)
+
+#define FLOW_CTRL_MPU_NS_I_CH       (FLOW_CTRL_MPU_NS_I_CH_R6 ^  FLOW_STEP_MPU_NS_I_CH)
 
 #define FLOW_CTRL_SAU_I_CH_R0       (FLOW_CTRL_MPU_NS_I_CH ^     FLOW_STEP_SAU_I_CH_R0)
 #define FLOW_CTRL_SAU_I_CH_R1       (FLOW_CTRL_SAU_I_CH_R0 ^     FLOW_STEP_SAU_I_CH_R1)
