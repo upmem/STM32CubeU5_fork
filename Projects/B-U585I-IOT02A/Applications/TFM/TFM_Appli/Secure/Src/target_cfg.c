@@ -29,8 +29,7 @@
 #ifdef TFM_FIH_PROFILE_ON
 #include "fih.h"
 #endif
-
-extern void Error_Handler(void);
+#include "error.h"
 
 /* The section names come from the scatter file */
 REGION_DECLARE(Load$$LR$$, LR_NS_PARTITION, $$Base);

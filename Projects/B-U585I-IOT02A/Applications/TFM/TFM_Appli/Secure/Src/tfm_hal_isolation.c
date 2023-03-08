@@ -17,7 +17,7 @@
 #include "low_level_rng.h"
 #include "fih.h"
 
-extern void Error_Handler(void);
+#include "error.h"
 
 #ifdef CONFIG_TFM_ENABLE_MEMORY_PROTECT
 #if TFM_LVL == 3
@@ -289,6 +289,7 @@ static enum tfm_hal_status_t mpu_init(void)
 #ifdef TFM_FIH_PROFILE_ON
   FIH_RET(fih_int_encode(TFM_HAL_SUCCESS));
 #else
+
    return TFM_HAL_SUCCESS;
 #endif
 }

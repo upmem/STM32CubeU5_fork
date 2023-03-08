@@ -17,7 +17,7 @@
 #endif
 #include "tfm_app_rot_api.h"
 #include "tfm_log.h"
-extern void Error_Handler(void);
+#include "error.h"
 #define INPUT_BUFFER_SIZE  64
 #define OUTPUT_BUFFER_SIZE 64
 static enum tfm_app_rot_err_t app_rot_ioctl_ipc(const psa_msg_t *msg);

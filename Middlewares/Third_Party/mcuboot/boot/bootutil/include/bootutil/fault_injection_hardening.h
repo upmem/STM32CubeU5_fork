@@ -125,7 +125,6 @@ typedef int fih_int;
 extern fih_int FIH_SUCCESS;
 extern fih_int FIH_FAILURE;
 
-extern void Error_Handler(void);
 
 #ifdef FIH_ENABLE_GLOBAL_FAIL
 /* Global failure handler - more resistant to unlooping. noinline and used are

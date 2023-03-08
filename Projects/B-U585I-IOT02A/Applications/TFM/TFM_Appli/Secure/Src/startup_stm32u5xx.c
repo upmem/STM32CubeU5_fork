@@ -23,6 +23,7 @@
 
 #include "cmsis.h"
 #include "region.h"
+#include "error.h"
 
 /*----------------------------------------------------------------------------
   Exception / Interrupt Handler Function Prototype
@@ -40,7 +41,6 @@ extern uint32_t __MSP_STACK_LIMIT;
 extern uint32_t __INITIAL_SP;
 extern uint32_t __STACK_LIMIT;
 
-extern void Error_Handler(void);
 extern void __PROGRAM_START(void) __NO_RETURN;
 
 /*----------------------------------------------------------------------------
@@ -54,6 +54,7 @@ void Reset_Handler  (void) __NO_RETURN;
 #define DEFAULT_IRQ_HANDLER(handler_name)  \
 void handler_name(void); \
 __WEAK void handler_name(void) { \
+    Error_Handler(); \
     while(1); \
 }
 
@@ -244,8 +245,8 @@ extern const pFunc __VECTOR_TABLE[];
   Reset_Handler,                    /*      Reset Handler */
   NMI_Handler,                      /* -14: NMI Handler */
   HardFault_Handler,                /* -13: Hard Fault Handler */
-  Error_Handler,                    /* -12: MPU Fault Handler */
-  Error_Handler,                    /* -11: Bus Fault Handler */
+  MemManage_Handler,                /* -12: MPU Fault Handler */
+  BusFault_Handler,                 /* -11: Bus Fault Handler */
   UsageFault_Handler,               /* -10: Usage Fault Handler */
   SecureFault_Handler,              /*  -9: Secure Fault Handler */
   0,                                /*      Reserved */
@@ -260,7 +261,7 @@ extern const pFunc __VECTOR_TABLE[];
   PVD_AVD_IRQHandler,               /*   1: PVD/AVD through EXTI Line detection Interrupt */
   RTC_IRQHandler,                   /*   2: RTC non-secure interrupt */
   RTC_IRQHandler_S,                 /*   3: RTC secure interrupt */
-  Error_Handler,                    /*   4: Tamper non-secure interrupt  */
+  TAMP_IRQHandler,                    /*   4: Tamper non-secure interrupt  */
   RAMCFG_IRQHandler,                /*   5: RAMCFG global */
   FLASH_IRQHandler,                 /*   6: FLASH non-secure global interrupt */
   FLASH_IRQHandler_S,               /*   7: FLASH secure global interrupt */

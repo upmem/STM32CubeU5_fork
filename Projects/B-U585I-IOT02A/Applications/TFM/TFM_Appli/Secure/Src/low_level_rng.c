@@ -19,7 +19,7 @@
   */
 #include "low_level_rng.h"
 #include "stm32u5xx_hal.h"
-extern void Error_Handler(void);
+#include "error.h"
 
 static RNG_HandleTypeDef handle;
 static uint8_t users = 0;
