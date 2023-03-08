@@ -22,6 +22,7 @@
  */
 
 #include "stm32u5xx.h"
+#include "error.h"
 /*----------------------------------------------------------------------------
   Exception / Interrupt Handler Function Prototype
  *----------------------------------------------------------------------------*/
@@ -47,7 +48,8 @@ void Reset_Handler  (void) __NO_RETURN;
 #define DEFAULT_IRQ_HANDLER(handler_name)  \
 void handler_name(void); \
 __WEAK void handler_name(void) { \
-    while(1); \
+  Error_Handler();\
+  while(1); \
 }
 
 /* Exceptions */

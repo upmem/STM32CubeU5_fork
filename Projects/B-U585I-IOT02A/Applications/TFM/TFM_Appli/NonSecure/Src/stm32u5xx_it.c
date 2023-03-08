@@ -27,6 +27,7 @@
 #include "spi.h"
 #include "FreeRTOS.h"
 #include "task.h"
+#include "error.h"
 /** @addtogroup USER_APP User App Example
   * @{
   */
@@ -108,6 +109,7 @@ void SPI3_IRQHandler(void)
   */
 void HardFault_Handler(void)
 {
+  Error_Handler();
   /* Go to infinite loop when Hard Fault exception occurs */
   while (1)
   {
@@ -121,6 +123,7 @@ void HardFault_Handler(void)
   */
 void MemManage_Handler(void)
 {
+  Error_Handler();
   /* Go to infinite loop when Memory Manage exception occurs */
   while (1)
   {
@@ -135,6 +138,7 @@ void MemManage_Handler(void)
   */
 void BusFault_Handler(void)
 {
+  Error_Handler();
   /* Go to infinite loop when Bus Fault exception occurs */
   while (1)
   {
@@ -148,6 +152,7 @@ void BusFault_Handler(void)
   */
 void UsageFault_Handler(void)
 {
+  Error_Handler();
   /* Go to infinite loop when Usage Fault exception occurs */
   while (1)
   {
