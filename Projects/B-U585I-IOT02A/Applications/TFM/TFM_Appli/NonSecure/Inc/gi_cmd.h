@@ -18,7 +18,7 @@ pilot_error_t check_answer(uint16_t *answ, uint32_t word_nr, uint32_t *valid_nr)
  * --------------
  */
 
-#define SPI_MAX_BUF_SIZE	(516)
+#define SPI_BUF_WORDS_NR	(516)
 /*
  * NR of BUBBLEs needed to overcome the SPI latency
  * we should not check the response for the BUBBLE
