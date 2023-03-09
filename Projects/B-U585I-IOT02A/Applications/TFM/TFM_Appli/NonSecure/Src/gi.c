@@ -24,7 +24,7 @@
 #include "pilot_keys.h"
 
 
-uint16_t answ_buffer[SPI_MAX_BUF_SIZE];
+uint16_t answ_buffer[SPI_BUF_WORDS_NR];
 
 static void print_gi_word(uint16_t word)
 {
@@ -205,33 +205,33 @@ pilot_error_t gi_share_keys (void) {
  * TODO replace with DPU FW binaries.
  * */
 pilot_error_t gi_dpu_load (void) {
-  pilot_error_t status = PILOT_SUCCESS;
-  uint32_t len = COUNTOF(secure_loader_facsimile);
+  pilot_error_t status = PILOT_FAILURE;
+  uint32_t seq_len = COUNTOF(secure_loader_facsimile);
+  uint32_t transfer_len = 0;
   uint32_t offset = 0;
-
   do {
-    while (len/SPI_MAX_BUF_SIZE) {
-	status = gi_al_transfer(DPU_DRAM_MASK_0, (uint16_t *)&secure_loader_facsimile[offset], answ_buffer, SPI_MAX_BUF_SIZE);
+    while (seq_len) {
+	transfer_len = (seq_len > SPI_BUF_WORDS_NR) ? SPI_BUF_WORDS_NR : seq_len;
+
+	status = gi_al_transfer(DPU_DRAM_MASK_0, (uint16_t *)&secure_loader_facsimile[offset], answ_buffer, transfer_len);
 	if (status != PILOT_SUCCESS) {
 	    break;
 	}
-	len -= SPI_MAX_BUF_SIZE;
-	offset += SPI_MAX_BUF_SIZE;
+	seq_len -= transfer_len;
+	offset += transfer_len;
     }
+
     if (status != PILOT_SUCCESS) {
 	break;
     }
 
-    status = gi_al_transfer(DPU_DRAM_MASK_0, (uint16_t *)&secure_loader_facsimile[offset], answ_buffer, len);
-    if (status != PILOT_SUCCESS) {
-	break;
-    }
     printf("IRAM successfully loaded\r\n");
 
-    status = gi_share_keys();
-    if (status != PILOT_SUCCESS) {
+    if (gi_share_keys() != PILOT_SUCCESS) {
 	break;
     }
+
+    status = PILOT_SUCCESS;
   } while(0);
 
   return status;

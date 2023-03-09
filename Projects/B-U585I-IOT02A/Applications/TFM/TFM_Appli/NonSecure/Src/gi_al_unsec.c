@@ -22,7 +22,7 @@
 
 
 uint16_t spi_recovery_ignored_words_nr = 516;
-uint16_t gi_tmp_buffer[SPI_MAX_BUF_SIZE];
+uint16_t gi_tmp_buffer[SPI_BUF_WORDS_NR];
 
 /* ------------------------------------
  *  GI CIPHER disabled - functions defintion
