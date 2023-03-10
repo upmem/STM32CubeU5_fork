@@ -158,7 +158,7 @@ extern "C" {
 #else
 #define FLOW_STEP_MPU_NS_I_CH_R4    0x00000000U        /*!< No effect on control flow */
 #endif /* #ifdef TFM_ERROR_HANDLER_NON_SECURE */
-#define FLOW_STEP_MPU_NS_I_CH_R6    0x0075e7fb       /*!< Step MPU NonSecure Region 4 Init check value */
+#define FLOW_STEP_MPU_NS_I_CH_R6    0x0075e7fb       /*!< Step MPU NonSecure Region 6 Init check value */
 #define FLOW_STEP_MPU_NS_I_CH       0x0003717dU        /*!< Step MPU NonSecure Init check value */
 #else /* TFM_BOOT_MPU_PROTECTION */
 #define FLOW_STEP_MPU_S_I_CH_R0     0x00000000U        /*!< No effect on control flow */
