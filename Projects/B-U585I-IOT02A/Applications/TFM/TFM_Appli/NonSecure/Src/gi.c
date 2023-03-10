@@ -176,16 +176,17 @@ pilot_error_t gi_share_keys (void) {
   size_t size;
   pilot_error_t status =  PILOT_FAILURE;
   do {
-    if (psa_its_get(ITS_MASTER_KEY_UID, 0 , sizeof(master_key), master_key, &size) != PSA_SUCCESS) {
+    if (
+	(psa_its_get(ITS_MASTER_KEY_UID, 0 , sizeof(master_key), master_key, &size) != PSA_SUCCESS) ||
+	(size != sizeof(master_key))
+	){
 	break;
     }
-    if (size != sizeof(master_key)) {
-	break;
-    }
-    if (psa_its_get(ITS_SERVER_PUB_KEY_UID, 0 , sizeof(server_pub_key), server_pub_key, &size) != PSA_SUCCESS) {
-	break;
-    }
-    if (size != sizeof(server_pub_key)) {
+
+    if (
+	(psa_its_get(ITS_SERVER_PUB_KEY_UID, 0 , sizeof(server_pub_key), server_pub_key, &size) != PSA_SUCCESS) ||
+	(size != sizeof(server_pub_key))
+	){
 	break;
     }
     /* do not print any secret key */

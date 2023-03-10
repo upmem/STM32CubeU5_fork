@@ -38,7 +38,7 @@ static void print_message (host_msg_header *msg) {
  */
 void task_fake_request (void *pvParameters) {
   uint32_t* fake_request = NULL;
-  uint32_t cmd_id = 0;
+  uint32_t cmd_id = SET_MASTER_KEY_CMD;
   const uint8_t master_key[AES_128_KEY_SIZE] = {
       0x0, 0x1, 0x2, 0x3,
       0x4, 0x5, 0x6, 0x7,
@@ -95,7 +95,7 @@ void task_fake_request (void *pvParameters) {
         /* Could not send to the queue */
         Error_Handler();
       }
-      if (cmd_id == MAX_CMD_NR) {
+      if (cmd_id == DPU_LOAD_CMD) {
 	  vTaskSuspend(NULL);
       }
       cmd_id++;
@@ -122,13 +122,25 @@ static void send_response (host_msg_header *req, host_msg_header *rsp, size_t rs
 static void set_key (psa_storage_uid_t uid, uint8_t *key, size_t key_size, uint16_t *status) {
   psa_status_t psa_status = PSA_ERROR_GENERIC_ERROR;
   *status = API_FAILURE;
+  do {
+    if (
+	(key[0] == 0) &&
+	(memcmp (key, &key[1], key_size -1) == 0)
+    ) {
+	/* do not accept 0s value keys */
+	break;
+    }
+    psa_status = psa_its_set(uid, key_size, key, PSA_STORAGE_FLAG_WRITE_ONCE);
 
-  psa_status = psa_its_set(uid, key_size, key, PSA_STORAGE_FLAG_WRITE_ONCE);
-  if (psa_status == PSA_SUCCESS) {
-      *status = API_SUCCESS;
-  } else if (psa_status == PSA_ERROR_NOT_PERMITTED) {
-      *status = SET_API_ERROR(API_STATUS_NOT_PERMITTED);
-  }
+    if (psa_status != PSA_SUCCESS) {
+	if (psa_status == PSA_ERROR_NOT_PERMITTED) {
+	    *status = SET_API_ERROR(API_STATUS_NOT_PERMITTED);
+	}
+	break;
+    }
+    *status = API_SUCCESS;
+
+  } while(0);
 }
 
 static void set_master_key (host_set_master_key_req *req) {

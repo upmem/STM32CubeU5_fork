@@ -17,17 +17,16 @@
 #define SET_API_TAG_VER(tag, version) (((tag & 0xf) << 4) | (version & 0xf))
 
 /* Command ID definitions */
-#define SET_MASTER_KEY_CMD	(0x0)
-#define SET_SERVER_PUB_KEY_CMD	(0x1)
-#define DPU_LOAD_CMD		(0x2)
-#define MAX_CMD_NR		(0x2)
+#define SET_MASTER_KEY_CMD	(0x1)
+#define SET_SERVER_PUB_KEY_CMD	(0x2)
+#define DPU_LOAD_CMD		(0x3)
 
 /* Max message size is 1KB */
 #define MSG_MAX_WORDS_SIZE	(256)
 /* API error codes definitions */
 typedef uint16_t api_error_t;
 
-#define API_SUCCESS			(0x0)
+#define API_SUCCESS			(0x29)
 #define API_FAILURE			(0xff)
 
 #define API_STATUS_NOT_PERMITTED	(0x1)
