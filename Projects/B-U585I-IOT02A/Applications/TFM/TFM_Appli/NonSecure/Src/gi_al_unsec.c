@@ -30,16 +30,16 @@ uint16_t spi_recovery_ignored_words_nr = SPI_BUF_WORDS_NR;
 */
 static void gi_resume (uint16_t ss_mask) {
   /* Send recovery frame */
-  uint16_t *answ_tmp = pvPortMalloc(spi_recovery_ignored_words_nr * sizeof(uint16_t));
+  uint16_t *answ_seq = pvPortMalloc(spi_recovery_ignored_words_nr * sizeof(uint16_t));
   if (
-      (SPI_GI_Transmit_Receive(ss_mask, (uint16_t *)bubble_seq, answ_tmp, spi_recovery_ignored_words_nr, SPI_TRANSFERT_MODE_BURST_BLOCKING) != PILOT_SUCCESS) ||
-      (SPI_GI_Transmit_Receive(ss_mask, (uint16_t *)resume_seq, answ_tmp, COUNTOF(resume_seq), SPI_TRANSFERT_MODE_BURST_BLOCKING) != PILOT_SUCCESS) ||
+      (SPI_GI_Transmit_Receive(ss_mask, (uint16_t *)bubble_seq, answ_seq, spi_recovery_ignored_words_nr, SPI_TRANSFERT_MODE_BURST_BLOCKING) != PILOT_SUCCESS) ||
+      (SPI_GI_Transmit_Receive(ss_mask, (uint16_t *)resume_seq, answ_seq, COUNTOF(resume_seq), SPI_TRANSFERT_MODE_BURST_BLOCKING) != PILOT_SUCCESS) ||
       /* Only the last answer word is of interest, we don't need to check BUBBLE responses */
-      (check_answer(&answ_tmp[COUNTOF(resume_seq) - 1], 1, NULL) != PILOT_SUCCESS)
+      (check_answer(&answ_seq[COUNTOF(resume_seq) - 1], 1, NULL) != PILOT_SUCCESS)
   ){
       Error_Handler();
   }
-  vPortFree(answ_tmp);
+  vPortFree(answ_seq);
 }
 
 /*

@@ -277,7 +277,7 @@ pilot_error_t SPI_GI_Transmit_Receive(uint16_t ss_mask, uint16_t* tx_buf, uint16
 	  status = HAL_ERROR;
 	  break;
       }
-      /* Always put SPI_debug before the mutex release*/
+      /* Always call SPI_debug before the mutex release*/
       SPI_debug (tx_buf, rx_buf, len, mode, status);
       xSemaphoreGive(spi1_mutex);
   }
