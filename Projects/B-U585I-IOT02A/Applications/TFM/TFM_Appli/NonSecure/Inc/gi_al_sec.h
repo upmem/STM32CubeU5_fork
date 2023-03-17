@@ -65,7 +65,7 @@ static const uint16_t spi_gi_lnke_status_seq[] = {
  * ----------------
  */
 
-__attribute__((section(".data.flash_ns_data"), used))  static const volatile uint16_t secure_loader_facsimile[] = {
+__attribute__((section(".data.flash_ns_data"), used))  static const volatile uint16_t secure_loader_facsimile_seq[] = {
     0x3a8f, 0x515a, 0xeb13, 0xf543,
     0xbfde, 0x225d, 0xa4ca, 0xa2e4,
     0xb7a2, 0x3cae, 0xa3b6, 0x2af0,
