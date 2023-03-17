@@ -185,7 +185,6 @@ int main(int argc, char **argv)
   // I2C_Master_ping(I2C_ADDRESS_DCDC); // Uncomment to ping DC/DC with I2C
   // I2C_Master_test(); // Uncomment to test I2C communication with DC/DC
 
-  /* TODO uncomment it */
 #ifdef  PILOT_RTOS_SUPPORT
   RTOS_Init();
 #endif

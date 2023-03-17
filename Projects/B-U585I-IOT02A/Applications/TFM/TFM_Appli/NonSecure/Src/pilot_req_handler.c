@@ -192,6 +192,7 @@ void task_pilot_req_handler (void *pvParameters) {
 	  set_server_pub_key((host_set_server_pub_key_req *)req);
 	  break;
 	case DPU_LOAD_CMD:
+	  /* TODO This is blocking as of now, we are not going to check the request queue till the end of the DPU LOAD */
 	  dpu_load((host_dpu_load_req *)req);
 	  break;
 	default:

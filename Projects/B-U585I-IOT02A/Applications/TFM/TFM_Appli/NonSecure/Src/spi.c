@@ -23,10 +23,7 @@ SPI_HandleTypeDef handle_SPI_3;
 #define HARDWARE_RESET_HOLD_TIME_MS (1)
 
 static SemaphoreHandle_t spi1_mutex;
-
-volatile uint8_t dma_transfer;
-#define TRANSFER_START			(0)
-#define TRANSFER_COMPLETE		(1)
+static SemaphoreHandle_t dma_semaphore;
 
 /**
   * @brief SPI1 Initialization Function
@@ -81,7 +78,8 @@ static void MX_SPI1_Init(void)
   }
   /* USER CODE BEGIN SPI1_Init 2 */
   spi1_mutex = xSemaphoreCreateMutex();
-  if (spi1_mutex == NULL) {
+  dma_semaphore = xSemaphoreCreateBinary();
+  if ((spi1_mutex == NULL) || (dma_semaphore == NULL)) {
     Error_Handler();
   }
   /* USER CODE END SPI1_Init 2 */
@@ -262,7 +260,6 @@ pilot_error_t SPI_GI_Transmit_Receive(uint16_t ss_mask, uint16_t* tx_buf, uint16
 
 	/* Send SPI buffer using DMA (ChipSelect asserted only once) */
 	case SPI_TRANSFERT_MODE_DMA:
-	  dma_transfer = TRANSFER_START;
 	  set_ss(ss_mask, GPIO_PIN_RESET);  // Set SS Low.
 	  if (rx_buf != NULL && tx_buf != NULL) {
 	    status = HAL_SPI_TransmitReceive_DMA(&handle_SPI_1, (uint8_t *)tx_buf, (uint8_t *)rx_buf, len);
@@ -272,8 +269,7 @@ pilot_error_t SPI_GI_Transmit_Receive(uint16_t ss_mask, uint16_t* tx_buf, uint16
 	    status = HAL_SPI_Receive_DMA(&handle_SPI_1, (uint8_t *)rx_buf, len);
 	  }
 	  /* wait the end of DMA transfer */
-	  while (dma_transfer != TRANSFER_COMPLETE)
-	  {}
+	  xSemaphoreTake(dma_semaphore, portMAX_DELAY);
 	  set_ss(ss_mask, GPIO_PIN_SET); // Set SS high
 	  break;
 	/* unknown mode : return error */
@@ -308,10 +304,10 @@ void SPI_DRAM_HW_Reset(uint16_t ss_mask)
 
 void SPI_Com_Complete(SPI_HandleTypeDef *hspi)
 {
-
+  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
   if (hspi == &handle_SPI_1)
   {
-    dma_transfer = TRANSFER_COMPLETE;
+    xSemaphoreGiveFromISR(dma_semaphore, &xHigherPriorityTaskWoken);
   }
 }
 
