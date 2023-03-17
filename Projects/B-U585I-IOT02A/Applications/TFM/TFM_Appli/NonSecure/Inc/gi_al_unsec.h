@@ -147,7 +147,7 @@ static const uint16_t resume_seq[] = {
  * ----------------
  */
 
-__attribute__((section(".data.flash_ns_data"), used))  static const volatile uint16_t secure_loader_facsimile [] = {
+__attribute__((section(".data.flash_ns_data"), used))  static const volatile uint16_t secure_loader_facsimile_seq [] = {
     CMD_SELECT_ALL, CMD_NOP,
     CMD_INSTRUCTION(0xABC), CMD_INSTRUCTION(0xDEF), CMD_INSTRUCTION(0xFEB), CMD_INSTRUCTION(0xCBA),
     CMD_INSTRUCTION(0xABC), CMD_INSTRUCTION(0xDEF), CMD_INSTRUCTION(0xFEB), CMD_INSTRUCTION(0xCBA),

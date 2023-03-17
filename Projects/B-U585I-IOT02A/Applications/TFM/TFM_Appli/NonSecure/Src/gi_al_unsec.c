@@ -12,6 +12,7 @@
 #include "gi_al_unsec.h"
 #include "spi.h"
 #include <string.h>
+#include "FreeRTOS.h"
 
 #ifdef GI_DEBUG
 /* DEBUG enable printf, let's increase the timeout */
@@ -20,9 +21,8 @@
 #define GI_TIMEOUT	(TIME_MS(10U)) /* 10 ms */
 #endif
 
-
-uint16_t spi_recovery_ignored_words_nr = 516;
-uint16_t gi_tmp_buffer[SPI_BUF_WORDS_NR];
+/* spi_recovery_ignored_words_nr variable is updated by calling gi_set_spi_recovery function */
+uint16_t spi_recovery_ignored_words_nr = SPI_BUF_WORDS_NR;
 
 /* ------------------------------------
  *  GI CIPHER disabled - functions defintion
@@ -30,14 +30,16 @@ uint16_t gi_tmp_buffer[SPI_BUF_WORDS_NR];
 */
 static void gi_resume (uint16_t ss_mask) {
   /* Send recovery frame */
+  uint16_t *answ_tmp = pvPortMalloc(spi_recovery_ignored_words_nr * sizeof(uint16_t));
   if (
-      (SPI_GI_Transmit_Receive(ss_mask, (uint16_t *)bubble_seq, gi_tmp_buffer, spi_recovery_ignored_words_nr, SPI_TRANSFERT_MODE_BURST_BLOCKING) != PILOT_SUCCESS) ||
-      (SPI_GI_Transmit_Receive(ss_mask, (uint16_t *)resume_seq, gi_tmp_buffer, COUNTOF(resume_seq), SPI_TRANSFERT_MODE_BURST_BLOCKING) != PILOT_SUCCESS) ||
+      (SPI_GI_Transmit_Receive(ss_mask, (uint16_t *)bubble_seq, answ_tmp, spi_recovery_ignored_words_nr, SPI_TRANSFERT_MODE_BURST_BLOCKING) != PILOT_SUCCESS) ||
+      (SPI_GI_Transmit_Receive(ss_mask, (uint16_t *)resume_seq, answ_tmp, COUNTOF(resume_seq), SPI_TRANSFERT_MODE_BURST_BLOCKING) != PILOT_SUCCESS) ||
       /* Only the last answer word is of interest, we don't need to check BUBBLE responses */
-      (check_answer(&gi_tmp_buffer[COUNTOF(resume_seq) - 1], 1, NULL) != PILOT_SUCCESS)
+      (check_answer(&answ_tmp[COUNTOF(resume_seq) - 1], 1, NULL) != PILOT_SUCCESS)
   ){
       Error_Handler();
   }
+  vPortFree(answ_tmp);
 }
 
 /*
@@ -50,7 +52,8 @@ pilot_error_t gi_al_transfer(uint16_t ss_mask, uint16_t* seq, uint16_t* answ, ui
   uint32_t valid_nr = 0;
   uint32_t timestamp = get_timestamp();
   uint8_t error = 0;
-  /* The first word of the gi_tmp_buffer is never copied to the answ buffer, shift the pointer by 1 position */
+  uint16_t *answ_tmp = pvPortMalloc(word_nr * sizeof(uint16_t));
+   /* The first word of the answ_tmp is never copied to the answ buffer, shift the pointer by 1 position */
   answ++;
   do {
     if (error) {
@@ -59,17 +62,17 @@ pilot_error_t gi_al_transfer(uint16_t ss_mask, uint16_t* seq, uint16_t* answ, ui
 	error = 0;
     }
     /* Send words over SPI */
-    if (SPI_GI_Transmit_Receive(ss_mask, seq, gi_tmp_buffer, word_nr, mode) != PILOT_SUCCESS) {
+    if (SPI_GI_Transmit_Receive(ss_mask, seq, answ_tmp, word_nr, mode) != PILOT_SUCCESS) {
 	Error_Handler();
     }
 
     /* Check the answer, the first answer word is ignored  */
-    if (check_answer(&gi_tmp_buffer[SPI_DRAIN_BUBBLE_NR], word_nr - SPI_DRAIN_BUBBLE_NR, &valid_nr) != PILOT_SUCCESS) {
+    if (check_answer(&answ_tmp[SPI_DRAIN_BUBBLE_NR], word_nr - SPI_DRAIN_BUBBLE_NR, &valid_nr) != PILOT_SUCCESS) {
 	error = 1;
     }
 
-    /* Copy to the answer buffer the valid response only, the first answer word is ignored */
-    memcpy(answ, &gi_tmp_buffer[SPI_DRAIN_BUBBLE_NR], valid_nr * sizeof(uint16_t));
+    /* Copy to the answ buffer the valid part of the response only, the first answer word is always ignored */
+    memcpy(answ, &answ_tmp[SPI_DRAIN_BUBBLE_NR], valid_nr * sizeof(uint16_t));
     /* If needed re-send part of the sequence */
     answ += valid_nr;
     seq +=valid_nr;
@@ -79,6 +82,7 @@ pilot_error_t gi_al_transfer(uint16_t ss_mask, uint16_t* seq, uint16_t* answ, ui
   if (!error) {
     ret = PILOT_SUCCESS;
   }
+  vPortFree(answ_tmp);
   return ret;
 }
 

@@ -62,11 +62,12 @@ pilot_error_t check_answer(uint16_t *answ, uint32_t word_nr, uint32_t *valid_nr)
 
 pilot_error_t gi_init (uint16_t ss_mask) {
   pilot_error_t ret = PILOT_FAILURE;
+  uint16_t seq_answ[COUNTOF(init_dpu_id_seq)];
   do{
     if (gi_al_init(ss_mask) !=  PILOT_SUCCESS) {
 	break;
     }
-    if (gi_al_transfer(ss_mask, (uint16_t *)init_dpu_id_seq, answ_buffer, COUNTOF(init_dpu_id_seq), SPI_TRANSFERT_MODE_BURST_BLOCKING) != PILOT_SUCCESS) {
+    if (gi_al_transfer(ss_mask, (uint16_t *)init_dpu_id_seq, seq_answ, COUNTOF(init_dpu_id_seq), SPI_TRANSFERT_MODE_BURST_BLOCKING) != PILOT_SUCCESS) {
 	break;
     }
     ret = PILOT_SUCCESS;
@@ -78,24 +79,24 @@ pilot_error_t gi_check_lnke_status (uint16_t ss_mask) {
   uint16_t chip_id = 0;
   uint16_t pll_lock = 0;
   pilot_error_t ret = PILOT_FAILURE;
-
+  uint16_t seq_answ[COUNTOF(spi_gi_lnke_status_seq)];
   do {
       /* read the LNKE status registers*/
-      if ((gi_al_transfer(ss_mask, (uint16_t*)spi_gi_lnke_status_seq, answ_buffer, COUNTOF(spi_gi_lnke_status_seq), SPI_TRANSFERT_MODE_BURST_BLOCKING) != PILOT_SUCCESS) ||
+      if ((gi_al_transfer(ss_mask, (uint16_t*)spi_gi_lnke_status_seq, seq_answ, COUNTOF(spi_gi_lnke_status_seq), SPI_TRANSFERT_MODE_BURST_BLOCKING) != PILOT_SUCCESS) ||
           /* Verify there are valid results in the appropriate answer words */
-	  (popcount(GI_RESPONSE_GET_RESULT_VALID_FLAG(answ_buffer[CHIPID_MSB_ANSW_POS])) < 2) ||
-	  (popcount(GI_RESPONSE_GET_RESULT_VALID_FLAG(answ_buffer[CHIPID_LSB_ANSW_POS])) < 2) ||
-	  (popcount(GI_RESPONSE_GET_RESULT_VALID_FLAG(answ_buffer[PLL_LOCK_ANSW_POS])) < 2)
+	  (popcount(GI_RESPONSE_GET_RESULT_VALID_FLAG(seq_answ[CHIPID_MSB_ANSW_POS])) < 2) ||
+	  (popcount(GI_RESPONSE_GET_RESULT_VALID_FLAG(seq_answ[CHIPID_LSB_ANSW_POS])) < 2) ||
+	  (popcount(GI_RESPONSE_GET_RESULT_VALID_FLAG(seq_answ[PLL_LOCK_ANSW_POS])) < 2)
          ){
 	  break;
       }
-      chip_id = (GI_RESPONSE_GET_RESULT(answ_buffer[CHIPID_MSB_ANSW_POS]) << 8) | GI_RESPONSE_GET_RESULT(answ_buffer[CHIPID_LSB_ANSW_POS]);
-      pll_lock = GI_RESPONSE_GET_RESULT(answ_buffer[PLL_LOCK_ANSW_POS]);
+      chip_id = (GI_RESPONSE_GET_RESULT(seq_answ[CHIPID_MSB_ANSW_POS]) << 8) | GI_RESPONSE_GET_RESULT(seq_answ[CHIPID_LSB_ANSW_POS]);
+      pll_lock = GI_RESPONSE_GET_RESULT(seq_answ[PLL_LOCK_ANSW_POS]);
 
       if ((chip_id != CHIP_ID_FPGA) || (pll_lock != 0x1)) {
-	  print_gi_word(answ_buffer[CHIPID_MSB_ANSW_POS]);
-	  print_gi_word(answ_buffer[CHIPID_LSB_ANSW_POS]);
-	  print_gi_word(answ_buffer[PLL_LOCK_ANSW_POS]);
+	  print_gi_word(seq_answ[CHIPID_MSB_ANSW_POS]);
+	  print_gi_word(seq_answ[CHIPID_LSB_ANSW_POS]);
+	  print_gi_word(seq_answ[PLL_LOCK_ANSW_POS]);
 	  printf ("LNKE status issue: chipid=0x%x, pll_lock=0x%x\r\n", chip_id, pll_lock);
 	  break;
       }
@@ -112,17 +113,18 @@ pilot_error_t mailbox_read_write (uint16_t ss_mask, uint8_t dpu_id, uint8_t dpu_
       ESC_READ_WRITE_MAIL(host_wr_data, dpu_wr_data), ESC_NOP,
       BUBBLE
   };
+  uint16_t seq_answ[COUNTOF(mailbox_seq)];
   *dpu_rd_data = 0;
   *host_rd_data = 0;
   do {
-      if (gi_al_transfer(ss_mask, (uint16_t *)mailbox_seq, answ_buffer, COUNTOF(mailbox_seq), SPI_TRANSFERT_MODE_BURST_BLOCKING) != PILOT_SUCCESS) {
+      if (gi_al_transfer(ss_mask, (uint16_t *)mailbox_seq, seq_answ, COUNTOF(mailbox_seq), SPI_TRANSFERT_MODE_BURST_BLOCKING) != PILOT_SUCCESS) {
         break;
       }
-      if (popcount(GI_RESPONSE_GET_RESULT_VALID_FLAG(answ_buffer[MAILBOX_ANSW_DATA_POS])) < 2) {
+      if (popcount(GI_RESPONSE_GET_RESULT_VALID_FLAG(seq_answ[MAILBOX_ANSW_DATA_POS])) < 2) {
 	  break;
       }
-      *dpu_rd_data = MAILBOX_GET_DPU_DATA(GI_RESPONSE_GET_RESULT(answ_buffer[MAILBOX_ANSW_DATA_POS]));
-      *host_rd_data = MAILBOX_GET_HOST_DATA(GI_RESPONSE_GET_RESULT(answ_buffer[MAILBOX_ANSW_DATA_POS]));
+      *dpu_rd_data = MAILBOX_GET_DPU_DATA(GI_RESPONSE_GET_RESULT(seq_answ[MAILBOX_ANSW_DATA_POS]));
+      *host_rd_data = MAILBOX_GET_HOST_DATA(GI_RESPONSE_GET_RESULT(seq_answ[MAILBOX_ANSW_DATA_POS]));
       ret = PILOT_SUCCESS;
   } while (0);
 
@@ -207,14 +209,15 @@ pilot_error_t gi_share_keys (void) {
  * */
 pilot_error_t gi_dpu_load (void) {
   pilot_error_t status = PILOT_FAILURE;
-  uint32_t seq_len = COUNTOF(secure_loader_facsimile);
+  uint32_t seq_len = COUNTOF(secure_loader_facsimile_seq);
   uint32_t transfer_len = 0;
   uint32_t offset = 0;
+  uint16_t *seq_answ = pvPortMalloc(SPI_BUF_WORDS_NR * sizeof(uint16_t));
   do {
     while (seq_len) {
 	transfer_len = (seq_len > SPI_BUF_WORDS_NR) ? SPI_BUF_WORDS_NR : seq_len;
 
-	status = gi_al_transfer(DPU_DRAM_MASK_0, (uint16_t *)&secure_loader_facsimile[offset], answ_buffer, transfer_len, SPI_TRANSFERT_MODE_DMA);
+	status = gi_al_transfer(DPU_DRAM_MASK_0, (uint16_t *)&secure_loader_facsimile_seq[offset], seq_answ, transfer_len, SPI_TRANSFERT_MODE_DMA);
 	if (status != PILOT_SUCCESS) {
 	    break;
 	}
@@ -234,7 +237,7 @@ pilot_error_t gi_dpu_load (void) {
 
     status = PILOT_SUCCESS;
   } while(0);
-
+  vPortFree(seq_answ);
   return status;
 }
 

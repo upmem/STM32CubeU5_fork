@@ -146,7 +146,7 @@ int main(int argc, char **argv)
   /* Configure Communication module */
   COM_Init();
 
-  printf("\r\nApp version %s %s\r\n", version, commit);
+  printf("\r\nApp version %s commit %s\r\n", version, commit);
 
   /* Configure DMA */
   DMA_Init();
