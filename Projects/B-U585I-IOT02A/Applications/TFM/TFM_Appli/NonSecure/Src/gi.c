@@ -162,8 +162,8 @@ void gi_task_mailbox_polling (void *pvParameters) {
 	  Error_Handler();
       }
     }
-    /* Move the task to blocked state for 1ms */
-    vTaskDelay(pdMS_TO_TICKS(1));
+    /* Move the task to blocked state for 100ms */
+    vTaskDelay(pdMS_TO_TICKS(100));
   }
 }
 
