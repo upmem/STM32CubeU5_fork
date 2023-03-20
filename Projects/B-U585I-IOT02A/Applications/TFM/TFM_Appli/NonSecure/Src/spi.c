@@ -310,8 +310,8 @@ void SPI_Com_Complete(SPI_HandleTypeDef *hspi)
     /* Unblock the task that was wating on the the semaphore. */
     xSemaphoreGiveFromISR(dma_semaphore, &xHigherPriorityTaskWoken);
   }
-  /* Yield if the unbloked task has an higher priority
-   * i.e xHigherPriorityTaskWoken is true.
+  /* Trigger a context switch if the unbloked task
+   * has an higher priority (xHigherPriorityTaskWoken is true).
    */
   portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
