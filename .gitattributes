@@ -36,3 +36,4 @@
 *.eww binary
 *.vcxproj binary
 *.url binary
+*.sh binary
